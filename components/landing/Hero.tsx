@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import TimetableIllustration from "./TImeTableIllustration";
 import LoginModal from "../loginPopup";
@@ -8,6 +9,13 @@ export default function Section1() {
   const [open, setOpen] = useState(false);
   const [showLogin, setShowLogin] = useState(false)
   const { data: session } = useSession();
+  useEffect(() => {
+  if (session && showLogin) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowLogin(false);
+    setOpen(true);
+  }
+}, [session, showLogin]);
   return (
     <>
       <div className="w-full min-h-screen flex justify-center items-center bg-[#FFF8E7]">
