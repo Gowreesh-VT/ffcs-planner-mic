@@ -98,8 +98,8 @@ export default function LandingPage() {
           <div className="hero-text">
             <h1>Build Your<br />Timetable</h1>
             <p>
-              Lorem Ipsum Dolor Sit Amet, Consectetur<br />
-              Adipiscing Elit, Sed Do Eiusmod Tempor
+              Plan your perfect timetable with our intuitive<br />
+              course selection and slot management tools
             </p>
             <div className="hero-buttons">
               <button className="btn-primary" onClick={() => setOpen(true)}>Get Started</button>
@@ -203,19 +203,19 @@ export default function LandingPage() {
             <div className="step-item">
               <div className="step-number">1</div>
               <p className="step-text">
-                Lorem ipsum dolor sit amet consectetur. Porttitor eu cursus arcu viverra eros at a sed dignissim. Nibh amet at nibh pulvinar accumsan at quisque orci.
+                Select your courses and preferences. Choose from available courses based on your specialization and academic requirements.
               </p>
             </div>
             <div className="step-item">
               <div className="step-number">2</div>
               <p className="step-text">
-                Lorem ipsum dolor sit amet consectetur. Porttitor eu cursus arcu viverra eros at a sed dignissim. Nibh amet at nibh pulvinar accumsan at quisque orci.
+                View available time slots for each course and build your timetable without conflicts. Our tool helps you avoid scheduling overlaps.
               </p>
             </div>
             <div className="step-item">
               <div className="step-number">3</div>
               <p className="step-text">
-                Lorem ipsum dolor sit amet consectetur. Porttitor eu cursus arcu viverra eros at a sed dignissim. Nibh amet at nibh pulvinar accumsan at quisque orci.
+                Save your timetable and share it with classmates. Export your final schedule for reference during FFCS registration.
               </p>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function LandingPage() {
             {[
               {
                 q: "Why to use this site?",
-                a: "Lorem ipsum dolor sit amet consectetur. Sed vitae proin enim amet consequat sit. Lorem convallis imperdiet at quis feugiat est dignissim in mi. A odio purus feugiat volutpat tellus felis amet vulputate urna."
+                a: "Our FFCS planner helps you make informed decisions before registering for courses. Plan ahead, avoid schedule conflicts, and save time during the actual FFCS registration process. It's designed specifically for VIT's course system."
               },
               {
                 q: "Will it help me in my\nFFCS",
@@ -236,11 +236,11 @@ export default function LandingPage() {
               },
               {
                 q: "Do I need to be a VIT student to use\nthis site?",
-                a: "This tool is specifically designed for the FFCS system at VIT. However, anyone can try it out!"
+                a: "This tool is specifically designed for the FFCS system at VIT Chennai. However, anyone can try it out!"
               },
               {
-                q: "Lorem ipsum dolor sit amet\nconsectetur.",
-                a: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam."
+                q: "Can I change my timetable\nafter saving?",
+                a: "Yes, you can edit your saved timetables anytime. Make adjustments to your course selections and slot preferences before the FFCS registration deadline."
               }
             ].map((faq, index) => (
               <div
@@ -289,7 +289,7 @@ export default function LandingPage() {
             <div className="f-block f-about">
               <h3>FFCS</h3>
               <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.
+                The Flexible Fast Customized Schedule (FFCS) planning tool helps VIT Chennai students organize their course selections before registration. Create multiple timetables, compare schedules, and prepare for seamless FFCS registration with our intelligent course and slot management system.
               </p>
             </div>
 
