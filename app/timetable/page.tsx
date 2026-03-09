@@ -23,6 +23,10 @@ const getCookie = (name: string): string | null => {
     return null;
 };
 
+const deleteCookie = (name: string) => {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
+
 const SLOT_COLORS = ['#C8F7DC', '#E0D4F5', '#FFF3B0', '#FFD6E0', '#BDD7FF', '#B8F0E0'];
 
 function getSlotColor(code: string, allCodes: string[]) {
@@ -42,6 +46,8 @@ export default function TimetablePage() {
     const [toast, setToast] = useState('');
     const [clashMessage, setClashMessage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [timetableTitle, setTimetableTitle] = useState('My Schedule');
 
     const { scheduleRows, leftTimes, rightTimes } = useMemo(() => getSlotViewPayload(), []);
 
@@ -51,6 +57,12 @@ export default function TimetablePage() {
     useEffect(() => {
         if (hasInitialized.current) return;
         hasInitialized.current = true;
+
+        // Check if we're editing an existing timetable
+        const editingTitle = getCookie('editingTimetableTitle');
+        if (editingTitle) {
+            setEditingTimetableTitle(editingTitle);
+        }
 
         if (!timetableData || timetableData.length === 0) {
             const savedCoursesRaw = getCookie('preferenceCourses');
@@ -79,26 +91,51 @@ export default function TimetablePage() {
         setTimeout(() => setToast(''), 3000);
     }, []);
 
-    const handleSave = async (isPublic = false) => {
-        if (!session?.user?.email || isSaving || currentTT.length === 0) return;
+    const handleSave = async (isPublic = false, customTitle?: string) => {
+        if (!session?.user?.email) {
+            showToast('Please sign in to save or share your timetable.');
+            return null;
+        }
+        if (isSaving || currentTT.length === 0) return null;
+        
         setIsSaving(true);
         try {
-            const title = isPublic ? 'Shared Timetable' : (prompt('Enter a title for this timetable:', 'My Schedule') || 'Untitled');
-            const res = await axios.post('/api/save-timetable', {
-                title,
-                slots: currentTT.map(s => ({
-                    slot: s.slotName,
-                    courseCode: s.courseCode,
-                    courseName: s.courseName,
-                    facultyName: s.facultyName,
-                })),
-                owner: session.user.email,
-                isPublic,
-            });
+            const editingTimetableId = getCookie('editingTimetableId');
+            const editingTimetableTitle = getCookie('editingTimetableTitle');
+            
+            const slotsData = currentTT.map(s => ({
+                slot: s.slotName,
+                courseCode: s.courseCode,
+                courseName: s.courseName,
+                facultyName: s.facultyName,
+            }));
 
-            if (res.data.success) {
-                if (!isPublic) showToast('Timetable saved successfully!');
-                return res.data.timetable;
+            if (editingTimetableId) {
+                // Update existing timetable
+                const res = await axios.patch(`/api/timetables/${editingTimetableId}`, {
+                    slots: slotsData,
+                    isPublic,
+                });
+
+                if (res.data.success) {
+                    // Keep editing cookies so user can continue to update the same timetable
+                    if (!isPublic) showToast('Timetable updated successfully!');
+                    return { _id: editingTimetableId, shareId: null };
+                }
+            } else {
+                // Create new timetable
+                const title = isPublic ? 'Shared Timetable' : (prompt('Enter a title for this timetable:', 'My Schedule') || 'Untitled');
+                const res = await axios.post('/api/save-timetable', {
+                    title,
+                    slots: slotsData,
+                    owner: session.user.email,
+                    isPublic,
+                });
+
+                if (res.data.success) {
+                    if (!isPublic) showToast('Timetable saved successfully!');
+                    return res.data.timetable;
+                }
             }
         } catch (error) {
             console.error('Save error:', error);
@@ -106,21 +143,43 @@ export default function TimetablePage() {
         } finally {
             setIsSaving(false);
         }
+        return null;
     };
 
     const handleDownload = async () => {
         if (currentTT.length === 0) return;
         showToast('Preparing PDF...');
-        await exportToPDF('timetable-grid', `timetable-option-${currentIndex + 1}.pdf`);
+        try {
+            await exportToPDF('rat', `timetable-option-${currentIndex + 1}.pdf`);
+            showToast('PDF downloaded successfully!');
+        } catch (error) {
+            console.error('PDF error:', error);
+            showToast('Failed to generate PDF.');
+        }
     };
 
     const handleShare = async () => {
         if (!session?.user?.email || currentTT.length === 0) return;
-        const saved = await handleSave(true);
-        if (saved?.shareId) {
-            const url = `${window.location.origin}/share/${saved.shareId}`;
-            await navigator.clipboard.writeText(url);
-            showToast('Share link copied to clipboard!');
+        const editingTimetableId = getCookie('editingTimetableId');
+        
+        if (editingTimetableId) {
+            // Update existing timetable and get its shareId
+            await handleSave(true);
+            const timetableRes = await axios.get(`/api/timetables/${editingTimetableId}`);
+            const shareId = timetableRes.data.shareId;
+            if (shareId) {
+                const url = `${window.location.origin}/share/${shareId}`;
+                await navigator.clipboard.writeText(url);
+                showToast('Share link copied to clipboard!');
+            }
+        } else {
+            // Create new timetable
+            const saved = await handleSave(true);
+            if (saved?.shareId) {
+                const url = `${window.location.origin}/share/${saved.shareId}`;
+                await navigator.clipboard.writeText(url);
+                showToast('Share link copied to clipboard!');
+            }
         }
     };
 
@@ -161,7 +220,10 @@ export default function TimetablePage() {
                     {clashMessage || "We couldn't generate any non-clashing combinations based on your selections."}
                 </p>
                 <button
-                    onClick={() => router.push('/courses')}
+                    onClick={() => {
+                        // Keep editing state in case user wants to try again
+                        router.push('/courses');
+                    }}
                     className="px-8 py-3 bg-[#A0C4FF] text-black font-bold rounded-xl shadow-lg hover:scale-105 transition-all"
                 >
                     Back to Selection
@@ -178,28 +240,41 @@ export default function TimetablePage() {
                     {toast}
                 </div>
             )}
+            <div className='w-full max-w-[1400px] pt-4 px-6 mx-auto mb-2'>
+                <h1 className="text-[22px] font-bold text-black">Timetables Generated</h1>
+            </div>
 
             <div className="w-[95%] max-w-[1400px] bg-[#FFFBF0] rounded-[32px] p-8 my-8 pb-4 shadow-sm">
-                <h1 className="text-[26px] font-bold text-black pb-12 ml-2">Timetable Generated</h1>
+                <div className="flex items-center gap-4 pb-6 ml-2">
+                    <h1 className="text-[26px] font-bold text-black">Timetables Generated</h1>
+                    {editingTimetableTitle && (
+                        <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="text-blue-800 font-semibold text-sm">Editing: {editingTimetableTitle}</span>
+                        </div>
+                    )}
+                </div>
 
                 {/* Main Table Container */}
-                <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-x-auto border border-white" id="timetable-grid">
-                    <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-[24px]">
+                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-x-auto border border-white" id="timetable-grid">
+                    <div id="rat"> <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-[16px]">
                         <thead>
-                            <tr className="border-b border-gray-200">
-                                <th className="p-4 text-center text-sm font-bold text-black border-r border-gray-200 bg-white">Theory Hours</th>
+                            <tr className="border-b-[2px] border-white">
+                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={` text-center text-xs font-bold text-black border-r border-gray-200 bg-white ${i === 6 ? 'w-[40px] px-0' : ''}`}>
+                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
                                         {t.theory ? t.theory.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
                                     </th>
                                 ))}
                             </tr>
-                            <tr className="border-b border-gray-200">
-                                <th className="p-4 text-center text-sm font-bold text-black border-r border-gray-200 bg-white">Lab Hours</th>
+                            <tr className="border-b-[2px] border-white">
+                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={` text-center text-xs font-bold text-black border-r border-gray-200 bg-white ${i === 6 ? 'w-[40px] px-0' : ''}`}>
+                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
                                         {t.lab ? t.lab.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
@@ -207,18 +282,18 @@ export default function TimetablePage() {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="bg-white">
                             {scheduleRows.map((row, rowIdx) => (
-                                <tr key={row.day} className="group border-b border-gray-200">
-                                    <td className="p-0 text-sm font-bold text-black text-center align-middle w-[8vw] border-r border-gray-200 bg-white">{row.day}</td>
+                                <tr key={row.day} className="group border-b-[2px] border-white">
+                                    <td className="p-0 text-[11px] font-bold text-black text-center align-middle w-[5vw] border-r-[2px] border-white bg-white">{row.day}</td>
                                     {Array.from({ length: 13 }).map((_, colIdx) => {
                                         if (colIdx === 6) {
                                             // Space for Lunch
                                             const lunchLetters = ['L', 'U', 'N', 'C', 'H'];
                                             return (
-                                                <td key="lunch-spacer" className="w-[4vw] border-r border-gray-200 align-middle bg-white">
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <span className="text-sm font-bold text-black opacity-80">
+                                                <td key="lunch-spacer" className="w-[30px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
+                                                    <div className="flex flex-col items-center justify-center h-full py-1">
+                                                        <span className="text-[11px] font-black text-black opacity-80">
                                                             {lunchLetters[rowIdx]}
                                                         </span>
                                                     </div>
@@ -241,32 +316,45 @@ export default function TimetablePage() {
                                         }
 
                                         return (
-                                            <td key={colIdx} className={`p-2 align-top border-r border-gray-200 bg-white`}>
-                                                <div className="flex flex-col gap-4 ">
+                                            <td key={colIdx} className="align-top border-r-[2px] border-white p-0 bg-white">
+                                                <div className="flex flex-col h-full w-full">
                                                     {/* Theory Slot */}
                                                     <div
-                                                        className={`rounded-lg  flex flex-col items-center justify-center transition-all cursor-pointer ${theoryCell ? 'shadow-sm z-10' : 'bg-transparent'
-                                                            }`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${theoryCell ? 'z-10' : ''}`}
                                                         style={{
-                                                            backgroundColor: theoryCell ? '#C8F7DC' : 'transparent',
+                                                            backgroundColor: theoryCell ? getSlotColor(theoryCell.courseCode, allCodes) : '#e6f9ed',
                                                         }}
                                                         onClick={() => theoryCell && setSelectedSlot(theoryCell)}
                                                     >
-                                                        <span className={`text-xs font-bold ${theoryCell ? 'text-black' : 'text-gray-400'}`}>{theoryLabel}</span>
-                                                        {theoryCell && <span className="text-[10px] font-semibold opacity-80 uppercase mt-0.5 truncate max-w-[60px] text-black">{theoryCell.courseCode}</span>}
+                                                        {theoryCell ? (
+                                                            <>
+                                                                <span className="text-[10px] font-bold text-black leading-tight">{theoryLabel}</span>
+                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{theoryCell.courseCode}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-[#4ea075]">{theoryLabel}</span>
+                                                        )}
                                                     </div>
+
+                                                    {/* White separator between Theory and Lab */}
+                                                    <div className="h-[2px] w-full bg-white flex-shrink-0" />
 
                                                     {/* Lab Slot */}
                                                     <div
-                                                        className={`rounded-lg flex flex-col items-center justify-center transition-all cursor-pointer ${labCell ? 'shadow-sm z-10' : 'bg-transparent'
-                                                            }`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${labCell ? 'z-10' : ''}`}
                                                         style={{
-                                                            backgroundColor: labCell ? '#FFD6E0' : 'transparent',
+                                                            backgroundColor: labCell ? getSlotColor(labCell.courseCode, allCodes) : '#fff6e0',
                                                         }}
                                                         onClick={() => labCell && setSelectedSlot(labCell)}
                                                     >
-                                                        <span className={`text-xs font-bold ${labCell ? 'text-black' : 'text-gray-400'}`}>{labLabel}</span>
-                                                        {labCell && <span className="text-[10px] font-semibold opacity-80 uppercase mt-0.5 truncate max-w-[60px] text-black">{labCell.courseCode}</span>}
+                                                        {labCell ? (
+                                                            <>
+                                                                <span className="text-[10px] font-bold text-black leading-tight">{labLabel}</span>
+                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{labCell.courseCode}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-[#d4a044]">{labLabel}</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -276,9 +364,9 @@ export default function TimetablePage() {
                             ))}
                         </tbody>
                     </table>
-
+</div>
                     {/* Pagination & Action Controls */}
-                    <div className="flex flex-wrap items-center justify-between p-4 mt-8 mb-4">
+                    <div className="flex flex-wrap items-center justify-between p-3 py-2 mt-4 mb-1">
                         {/* Pagination */}
                         <div className="flex items-center gap-1 bg-[#A0C4FF]/80 p-2 rounded-xl shadow-sm">
                             <button
@@ -328,7 +416,7 @@ export default function TimetablePage() {
                                 Download
                             </button>
                             <button
-                                onClick={() => handleSave()}
+                                onClick={() => setShowSaveModal(true)}
                                 disabled={isSaving}
                                 className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
                             >
@@ -341,8 +429,8 @@ export default function TimetablePage() {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="bg-white border-t border-gray-300 py-6 px-8 shadow-lg animate-lucid-fade-up-delayed w-full mt-auto">
-                <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="bg-white border-t border-gray-300 py-4 px-8 shadow-lg animate-lucid-fade-up-delayed w-full mt-auto">
+                <div className="flex items-center justify-between max-w-[1400px] mx-auto">
                     <div className="flex items-center gap-3">
                         {session?.user?.image ? (
                             <img src={session.user.image} alt="User avatar" className="w-10 h-10 rounded-full" />
@@ -371,8 +459,11 @@ export default function TimetablePage() {
 
                     <div className="flex gap-3">
                         <button
-                            onClick={() => router.push('/courses')}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            onClick={() => {
+                                // Keep editing state when going back to make more changes
+                                router.push('/courses');
+                            }}
+                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition"
                         >
                             Previous
                         </button>
@@ -429,6 +520,44 @@ export default function TimetablePage() {
                                     <p className="text-[18px] font-bold text-black">Main Campus - TBD</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Save Modal */}
+            {showSaveModal && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveModal(false)}>
+                    <div
+                        className="bg-white rounded-[24px] shadow-2xl p-8 w-[90%] max-w-[400px] relative animate-[scaleIn_0.2s_ease]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 className="text-[24px] font-black text-black mb-4">Save Timetable</h2>
+                        <input
+                            type="text"
+                            value={timetableTitle}
+                            onChange={(e) => setTimetableTitle(e.target.value)}
+                            className="w-full p-4 border-2 border-gray-100 rounded-xl mb-6 text-black font-semibold text-[16px] focus:border-[#A0C4FF] focus:ring-2 focus:ring-[#A0C4FF]/20 outline-none transition-all placeholder:font-medium"
+                            placeholder="Enter a title..."
+                            autoFocus
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowSaveModal(false)}
+                                className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowSaveModal(false);
+                                    handleSave(false, timetableTitle);
+                                }}
+                                disabled={isSaving || !timetableTitle.trim()}
+                                className="px-6 py-2.5 rounded-xl font-bold bg-[#A0C4FF] text-black hover:bg-[#8ab2f2] transition-colors disabled:opacity-50"
+                            >
+                                Save
+                            </button>
                         </div>
                     </div>
                 </div>

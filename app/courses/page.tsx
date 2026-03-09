@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { fullCourseData } from '@/lib/type';
 import { getCourseType } from '@/lib/course_codes_map';
+import { clashMap } from '@/lib/slots';
 
 type FacultyEntry = {
     uid: string;
@@ -26,6 +27,10 @@ const setCookie = (name: string, value: string, days = 30) => {
     const expires = new Date();
     expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
     document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+};
+
+const deleteCookie = (name: string) => {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
 const getCookie = (name: string): string | null => {
@@ -97,6 +102,37 @@ const buildPreferenceCoursesFromRows = (rows: FacultyEntry[]): fullCourseData[] 
     }));
 };
 
+// Detect if two slots clash
+const doSlotsClash = (slot1: string, slot2: string): boolean => {
+    const slots1 = slot1.split('+').map(s => s.trim());
+    const slots2 = slot2.split('+').map(s => s.trim());
+    
+    for (const s1 of slots1) {
+        for (const s2 of slots2) {
+            if (s1 === s2) return true;
+            if (clashMap[s1]?.includes(s2)) return true;
+            if (clashMap[s2]?.includes(s1)) return true;
+        }
+    }
+    return false;
+};
+
+// Find all clashing faculty UIDs
+const findClashes = (faculties: FacultyEntry[]): Set<string> => {
+    const clashingUids = new Set<string>();
+    
+    for (let i = 0; i < faculties.length; i++) {
+        for (let j = i + 1; j < faculties.length; j++) {
+            if (doSlotsClash(faculties[i].slot, faculties[j].slot)) {
+                clashingUids.add(faculties[i].uid);
+                clashingUids.add(faculties[j].uid);
+            }
+        }
+    }
+    
+    return clashingUids;
+};
+
 export default function CoursesPage() {
     const router = useRouter();
     const { data: session } = useSession();
@@ -108,6 +144,8 @@ export default function CoursesPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [rowEffects, setRowEffects] = useState<Record<string, string>>({});
     const [isReordering, setIsReordering] = useState(false);
+    const [clashingUids, setClashingUids] = useState<Set<string>>(new Set());
+    const [editingTimetableTitle, setEditingTimetableTitle] = useState<string | null>(null);
 
     useEffect(() => {
         try {
@@ -116,9 +154,14 @@ export default function CoursesPage() {
             const savedSubject = getCookie('preferenceSubject');
             const savedSlot = getCookie('preferenceSlot');
             const savedAllSubjectsMode = getCookie('allSubjectsMode');
+            const editingTitle = getCookie('editingTimetableTitle');
 
             if (savedAllSubjectsMode) {
                 setAllSubjectsMode(JSON.parse(savedAllSubjectsMode));
+            }
+
+            if (editingTitle) {
+                setEditingTimetableTitle(editingTitle);
             }
 
             if (savedPreferenceCourses) {
@@ -174,6 +217,9 @@ export default function CoursesPage() {
 
         const updatedCourses = buildPreferenceCoursesFromRows(faculties);
         setCookie('preferenceCourses', JSON.stringify(updatedCourses));
+        
+        // Detect clashes
+        setClashingUids(findClashes(faculties));
     }, [faculties, loaded]);
 
     useEffect(() => {
@@ -289,7 +335,29 @@ export default function CoursesPage() {
     return (
         <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             <div className="flex-1 p-8">
-                <h1 className="text-4xl font-bold mb-16 text-black animate-lucid-fade-up">Your Faculty Preferences</h1>
+                <div className="flex items-center gap-4 mb-8">
+                    <h1 className="text-4xl font-bold text-black animate-lucid-fade-up">Your Faculty Preferences</h1>
+                    {editingTimetableTitle && (
+                        <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2 animate-lucid-fade-up">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="text-blue-800 font-semibold text-sm">Editing: {editingTimetableTitle}</span>
+                        </div>
+                    )}
+                </div>
+
+                {clashingUids.size > 0 && (
+                    <div className="bg-red-100 border-2 border-red-400 rounded-lg px-6 py-4 mb-6 flex items-center gap-3 animate-lucid-fade-up">
+                        <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <h3 className="text-red-800 font-bold text-lg">Slot Clash Detected!</h3>
+                            <p className="text-red-700 text-sm">Some courses have overlapping time slots. Courses with clashes are highlighted in red.</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 transition-shadow duration-300 hover:shadow-xl animate-lucid-fade-up-delayed">
                     <div className="bg-green-400 px-8 py-4 rounded-t-2xl">
@@ -310,20 +378,22 @@ export default function CoursesPage() {
                             </thead>
                             <tbody>
                                 {faculties.length > 0 ? (
-                                    faculties.map((faculty, index) => (
+                                    faculties.map((faculty, index) => {
+                                        const hasClash = clashingUids.has(faculty.uid);
+                                        return (
                                         <tr
                                             key={faculty.uid}
-                                            className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 animate-lucid-row ${rowEffects[faculty.uid] || ''} ${rowEffects[faculty.uid] === 'animate-dust-out' ? 'pointer-events-none' : ''}`}
+                                            className={`border-b border-gray-200 transition-colors duration-200 animate-lucid-row ${rowEffects[faculty.uid] || ''} ${rowEffects[faculty.uid] === 'animate-dust-out' ? 'pointer-events-none' : ''} ${hasClash ? 'bg-red-100 hover:bg-red-200' : 'hover:bg-gray-50'}`}
                                         >
-                                            <td className="px-6 py-4 text-black font-semibold text-center">{faculty.no}</td>
-                                            <td className="px-6 py-4 text-black font-mono font-bold text-sm">{faculty.courseCode}</td>
-                                            <td className="px-6 py-4 text-black">
+                                            <td className={`px-6 py-4 font-semibold text-center ${hasClash ? 'text-red-700' : 'text-black'}`}>{faculty.no}</td>
+                                            <td className={`px-6 py-4 font-mono font-bold text-sm ${hasClash ? 'text-red-700' : 'text-black'}`}>{faculty.courseCode}</td>
+                                            <td className={`px-6 py-4 ${hasClash ? 'text-red-700' : 'text-black'}`}>
                                                 <div className="text-sm whitespace-pre-wrap">{faculty.courseName}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-black">
-                                                <div className="text-sm whitespace-pre-wrap">{faculty.slot}</div>
+                                            <td className={`px-6 py-4 ${hasClash ? 'text-red-700' : 'text-black'}`}>
+                                                <div className="text-sm whitespace-pre-wrap font-semibold">{faculty.slot}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-black font-semibold">{faculty.facultyName}</td>
+                                            <td className={`px-6 py-4 font-semibold ${hasClash ? 'text-red-700' : 'text-black'}`}>{faculty.facultyName}</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
@@ -353,7 +423,8 @@ export default function CoursesPage() {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
@@ -429,8 +500,13 @@ export default function CoursesPage() {
 
                     <div className="flex gap-3">
                         <button
-                            onClick={() => router.push('/preferences')}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            onClick={() => {
+                                // Clear editing state when going back
+                                deleteCookie('editingTimetableId');
+                                deleteCookie('editingTimetableTitle');
+                                router.push('/preferences');
+                            }}
+                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition"
                         >
                             Previous
                         </button>

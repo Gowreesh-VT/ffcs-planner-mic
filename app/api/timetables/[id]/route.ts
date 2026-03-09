@@ -47,6 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const update: Record<string, unknown> = {};
     if (body.title !== undefined) update.title = body.title;
     if (body.isPublic !== undefined) update.isPublic = body.isPublic;
+    if (body.slots !== undefined) update.slots = body.slots;
 
     try {
         const timetable = await Timetable.findById(id);

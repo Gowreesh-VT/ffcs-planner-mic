@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Image from 'next/image';
+import { getCourseType } from '@/lib/course_codes_map';
+import { fullCourseData } from '@/lib/type';
+import { useTimetable } from '@/lib/TimeTableContext';
 import './saved.css';
 
 /* ── Slot → timetable grid mapping ── */
@@ -68,6 +71,63 @@ async function fetchTimetablesByOwner(owner: string) {
     return res.data;
 }
 
+/* ── Cookie Helpers ── */
+const setCookie = (name: string, value: string, days = 30) => {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+};
+
+const deleteCookie = (name: string) => {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
+
+/* ── Convert Timetable to Course Preferences ── */
+function convertTimetableToCoursePreferences(tt: TimetableEntry): fullCourseData[] {
+    // Group slots by courseCode, courseName
+    const courseMap = new Map<string, {
+        courseCode: string;
+        courseName: string;
+        slots: Map<string, string[]>; // slotName -> facultyNames[]
+    }>();
+
+    tt.slots.forEach(entry => {
+        const key = `${entry.courseCode}|||${entry.courseName}`;
+        if (!courseMap.has(key)) {
+            courseMap.set(key, {
+                courseCode: entry.courseCode,
+                courseName: entry.courseName,
+                slots: new Map(),
+            });
+        }
+        const course = courseMap.get(key)!;
+        
+        if (!course.slots.has(entry.slot)) {
+            course.slots.set(entry.slot, []);
+        }
+        course.slots.get(entry.slot)!.push(entry.facultyName);
+    });
+
+    // Convert to fullCourseData[]
+    const result: fullCourseData[] = [];
+    courseMap.forEach(course => {
+        const courseSlots = Array.from(course.slots.entries()).map(([slotName, faculties]) => ({
+            slotName,
+            slotFaculties: faculties.map(facultyName => ({ facultyName })),
+        }));
+
+        result.push({
+            id: `${course.courseCode} - ${course.courseName}_${Array.from(course.slots.keys()).join('_')}`,
+            courseType: getCourseType(course.courseCode),
+            courseCode: course.courseCode,
+            courseName: course.courseName,
+            courseSlots,
+        });
+    });
+
+    return result;
+}
+
 /* ── Mock timetables for UI preview when no real data ── */
 const MOCK_SLOTS = [
     { slot: 'A1+A2', courseCode: 'MAT201', courseName: 'Mathematics I', facultyName: 'Faculty A' },
@@ -95,6 +155,7 @@ export default function SavedPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
     const userEmail = session?.user?.email;
+    const { setTimetableData } = useTimetable();
 
     const [timetables, setTimetables] = useState<TimetableEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -110,6 +171,13 @@ export default function SavedPage() {
 
     function scrollLeft() { scrollRef.current?.scrollBy({ left: -380, behavior: 'smooth' }); }
     function scrollRight() { scrollRef.current?.scrollBy({ left: 380, behavior: 'smooth' }); }
+
+    // Clear any existing editing state when page loads
+    useEffect(() => {
+        deleteCookie('editingTimetableId');
+        deleteCookie('editingTimetableTitle');
+        setTimetableData(null); // Clear timetable context for fresh generation
+    }, [setTimetableData]);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -139,6 +207,26 @@ export default function SavedPage() {
     }, []);
 
     /* ── Handlers ── */
+    function handleEdit(tt: TimetableEntry) {
+        if (tt._id.startsWith('mock')) return;
+        
+        // Clear timetable context for fresh generation
+        setTimetableData(null);
+        
+        // Convert timetable to course preferences format
+        const coursePreferences = convertTimetableToCoursePreferences(tt);
+        
+        // Save to cookie
+        setCookie('preferenceCourses', JSON.stringify(coursePreferences));
+        
+        // Store the timetable ID being edited
+        setCookie('editingTimetableId', tt._id);
+        setCookie('editingTimetableTitle', tt.title);
+        
+        // Navigate to courses page
+        router.push('/courses');
+    }
+
     async function handleDelete() {
         if (!selectedTT) return;
         await axios.delete(`/api/timetables/${selectedTT._id}`);
@@ -232,6 +320,7 @@ export default function SavedPage() {
                                                         setSelectedTT(tt);
                                                         setViewMode('view');
                                                     }}
+                                                    onEdit={() => handleEdit(tt)}
                                                     onRename={() => {
                                                         if (tt._id.startsWith('mock')) return;
                                                         setSelectedTT(tt);
@@ -361,6 +450,7 @@ function TimetableCard({
     tt,
     index,
     onView,
+    onEdit,
     onRename,
     onDelete,
 }: {
@@ -368,6 +458,7 @@ function TimetableCard({
     index: number;
     allTimetables: TimetableEntry[];
     onView: () => void;
+    onEdit: () => void;
     onRename: () => void;
     onDelete: () => void;
 }) {
@@ -439,7 +530,7 @@ function TimetableCard({
             {/* Buttons */}
             <div className="card-btns">
                 <button onClick={e => { e.stopPropagation(); onView(); }} className="card-btn">View</button>
-                <button onClick={e => { e.stopPropagation(); onRename(); }} className="card-btn">Edit</button>
+                <button onClick={e => { e.stopPropagation(); onEdit(); }} className="card-btn">Edit</button>
             </div>
         </div>
     );

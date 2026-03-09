@@ -1,4 +1,4 @@
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
@@ -14,27 +14,37 @@ export const exportToPDF = async (elementId: string, filename: string = 'timetab
     }
 
     try {
-        // Capture the element as a canvas
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FFFAED',
-            logging: false,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
-
-        const imgData = canvas.toDataURL('image/png');
-
-        // PDF dimensions
-        const pdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
+        // Capture the element as a PNG image directly using html-to-image
+        // which natively supports modern CSS features like lab() and oklch()
+        // unlike html2canvas.
+        const dataUrl = await toPng(element, {
+            backgroundColor: '#FFFBF0',
+            pixelRatio: 2, // High resolution
+            style: {
+                // Ensure no unexpected overflow hiding ruins the capture
+                transform: 'scale(1)',
+                transformOrigin: 'top left'
+            }
         });
 
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        // Get image dimensions to create a properly sized PDF
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => {
+            img.onload = resolve;
+        });
+
+        // PDF dimensions based on the element
+        const pdf = new jsPDF({
+            orientation: img.width > img.height ? 'landscape' : 'portrait',
+            unit: 'px',
+            format: [img.width, img.height]
+        });
+
+        pdf.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
         pdf.save(filename);
     } catch (error) {
         console.error('Error generating PDF:', error);
+        throw error;
     }
 };
