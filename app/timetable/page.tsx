@@ -9,6 +9,7 @@ import { exportToPDF } from '@/lib/exportToPDF';
 import { generateTT } from '@/lib/utils';
 import { getSlotViewPayload } from '@/lib/slot-view';
 import { fullCourseData, timetableDisplayData } from '@/lib/type';
+import { clearPlannerClientCache } from '@/lib/clientCache';
 
 const getCookie = (name: string): string | null => {
     if (typeof document === 'undefined') return null;
@@ -134,6 +135,7 @@ export default function TimetablePage() {
                 });
 
                 if (res.data.success) {
+                    clearPlannerClientCache({ includeEditingState: false });
                     if (!isPublic) showToast('Timetable saved successfully!');
                     return res.data.timetable;
                 }

@@ -4,6 +4,12 @@ import { authOptions } from '../../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
 
+const NO_STORE_HEADERS = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+};
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
 
@@ -89,7 +95,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        return NextResponse.json(timetable, { status: 200 });
+        return NextResponse.json(timetable, { status: 200, headers: NO_STORE_HEADERS });
     } catch {
         return NextResponse.json({ error: 'Failed to fetch timetable' }, { status: 500 });
     }

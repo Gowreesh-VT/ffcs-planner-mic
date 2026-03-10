@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { fullCourseData } from '@/lib/type';
 
 type PreferencesContextType = {
@@ -18,21 +18,21 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
     const [selectedScheme, setSelectedScheme] = useState<string | null>(null);
     const [selectedCourses, setSelectedCourses] = useState<fullCourseData[]>([]);
 
-    const addCourse = (course: fullCourseData) => {
+    const addCourse = useCallback((course: fullCourseData) => {
         setSelectedCourses(prev => {
             const exists = prev.some(c => c.courseCode === course.courseCode);
             if (exists) return prev;
             return [...prev, course];
         });
-    };
+    }, []);
 
-    const removeCourse = (courseCode: string) => {
+    const removeCourse = useCallback((courseCode: string) => {
         setSelectedCourses(prev => prev.filter(c => c.courseCode !== courseCode));
-    };
+    }, []);
 
-    const clearCourses = () => {
+    const clearCourses = useCallback(() => {
         setSelectedCourses([]);
-    };
+    }, []);
 
     return (
         <PreferencesContext.Provider

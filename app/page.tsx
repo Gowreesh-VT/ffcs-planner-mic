@@ -5,6 +5,7 @@ import "./landing.css"; // Ensure standard normal CSS is imported
 import LoginModal from "../components/loginPopup"
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { clearPlannerClientCache } from "@/lib/clientCache";
 
 export default function LandingPage() {
   const [open, setOpen] = useState(false);
@@ -15,6 +16,11 @@ export default function LandingPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
+  const handleLogout = React.useCallback(() => {
+    clearPlannerClientCache({ includeEditingState: true });
+    signOut({ callbackUrl: "/" });
+  }, []);
+
   // Inactivity Logout Logic (e.g., 30 minutes of inactivity)
   React.useEffect(() => {
     if (!session) return;
@@ -24,7 +30,7 @@ export default function LandingPage() {
     const resetTimer = () => {
       if (inactivityTimer) clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        signOut({ callbackUrl: "/" });
+        handleLogout();
       }, 30 * 60 * 1000); // 30 minutes
     };
 
@@ -43,7 +49,7 @@ export default function LandingPage() {
       window.removeEventListener("scroll", resetTimer);
       if (inactivityTimer) clearTimeout(inactivityTimer);
     };
-  }, [session]);
+  }, [session, handleLogout]);
 
   const handleCalendarClick = () => {
     setIsCalendarAnimating(true);
@@ -77,7 +83,7 @@ export default function LandingPage() {
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 py-2 animate-lucid-fade-up">
                     <button
                       className="w-full text-left px-4 py-2 text-sm text-red-600 font-bold hover:bg-red-50 transition-colors flex items-center gap-2"
-                      onClick={() => signOut({ callbackUrl: "/" })}
+                      onClick={handleLogout}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
                       Log out

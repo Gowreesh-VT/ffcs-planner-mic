@@ -4,6 +4,12 @@ import { authOptions } from '../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
 
+const NO_STORE_HEADERS = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+};
+
 export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
@@ -25,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const timetables = await Timetable.find({ owner }).lean();
-        return NextResponse.json(timetables);
+        return NextResponse.json(timetables, { headers: NO_STORE_HEADERS });
     } catch {
         return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
     }
