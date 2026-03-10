@@ -543,15 +543,15 @@ body {
     }
 
     25% {
-        translate: -1.5px -3px;
+        translate: -6px -12px;
     }
 
     50% {
-        translate: 1px -5px;
+        translate: 4px -20px;
     }
 
     75% {
-        translate: 1.5px -2px;
+        translate: 6px -8px;
     }
 }
 
