@@ -4,6 +4,9 @@ import { authOptions } from '../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
 
+// Prevent Next.js from caching this route
+export const dynamic = 'force-dynamic';
+
 const NO_STORE_HEADERS = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     Pragma: 'no-cache',
@@ -31,11 +34,14 @@ export async function GET(req: NextRequest) {
 
     try {
         const timetables = await Timetable.find({
-  owner,
-  isPublic: false
-}).lean();
+            owner,
+            isPublic: false,
+        })
+            .sort({ createdAt: -1 })
+            .lean();
         return NextResponse.json(timetables, { headers: NO_STORE_HEADERS });
     } catch {
         return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
     }
 }
+

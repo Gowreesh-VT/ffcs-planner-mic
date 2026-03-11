@@ -5,6 +5,9 @@ import { generateShareId } from '@/lib/shareIDgenerate';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/authOptions';
 
+// Prevent Next.js from caching this route
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     await dbConnect();
     const body = await req.json();

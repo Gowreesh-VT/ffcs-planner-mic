@@ -49,7 +49,6 @@ export default function TimetablePage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [timetableTitle, setTimetableTitle] = useState('My Schedule');
-    const [editingTimetableTitle, setEditingTimetableTitle] = useState<string | null>(null);
 
     const { scheduleRows, leftTimes, rightTimes } = useMemo(() => getSlotViewPayload(), []);
 
@@ -93,7 +92,7 @@ export default function TimetablePage() {
         setTimeout(() => setToast(''), 3000);
     }, []);
 
-    const handleSave = async (isPublic = false, customTitle?: string) => {
+    const handleSave = async (customTitle?: string, options?: { skipRedirect?: boolean }) => {
         if (!session?.user?.email) {
             showToast('Please sign in to save or share your timetable.');
             return null;
@@ -115,31 +114,28 @@ export default function TimetablePage() {
                 // Update existing timetable
                 const res = await axios.patch(`/api/timetables/${editingTimetableId}`, {
                     slots: slotsData,
-                    isPublic,
                 });
 
                 if (res.data.success) {
-                    if (!isPublic) {
+                    if (!options?.skipRedirect) {
                         showToast('Timetable updated successfully!');
                         setTimeout(() => { router.refresh(); router.push('/saved'); }, 1200);
                     }
                     return { _id: editingTimetableId, shareId: null };
                 }
             } else {
-                // Create new timetable — use title from save modal (customTitle), fall back to state
-                const title = isPublic
-                    ? 'Shared Timetable'
-                    : (customTitle?.trim() || timetableTitle.trim() || 'My Schedule');
+                // Create new timetable
+                const title = customTitle?.trim() || timetableTitle.trim() || 'My Schedule';
                 const res = await axios.post('/api/save-timetable', {
                     title,
                     slots: slotsData,
                     owner: session.user.email,
-                    isPublic,
+                    isPublic: false,
                 });
 
                 if (res.data.success) {
                     clearPlannerClientCache({ includeEditingState: false });
-                    if (!isPublic) {
+                    if (!options?.skipRedirect) {
                         showToast('Timetable saved successfully!');
                         setTimeout(() => { router.refresh(); router.push('/saved'); }, 1200);
                     }
@@ -172,8 +168,16 @@ export default function TimetablePage() {
         const editingTimetableId = getCookie('editingTimetableId');
 
         if (editingTimetableId) {
-            // Update existing timetable and get its shareId
-            await handleSave(true);
+            // Existing timetable — update slots and get its shareId
+            const slotsData = currentTT.map(s => ({
+                slot: s.slotName,
+                courseCode: s.courseCode,
+                courseName: s.courseName,
+                facultyName: s.facultyName,
+            }));
+            await axios.patch(`/api/timetables/${editingTimetableId}`, {
+                slots: slotsData,
+            });
             const timetableRes = await axios.get(`/api/timetables/${editingTimetableId}`);
             const shareId = timetableRes.data.shareId;
             if (shareId) {
@@ -182,12 +186,22 @@ export default function TimetablePage() {
                 showToast('Share link copied to clipboard!');
             }
         } else {
-            // Create new timetable
-            const saved = await handleSave(true);
+            // Save as private timetable first, then share
+            const saved = await handleSave(timetableTitle, { skipRedirect: true });
             if (saved?.shareId) {
                 const url = `${window.location.origin}/share/${saved.shareId}`;
                 await navigator.clipboard.writeText(url);
                 showToast('Share link copied to clipboard!');
+            } else if (saved?._id) {
+                // Fetch the timetable to get the shareId
+                try {
+                    const res = await axios.get(`/api/timetables/${saved._id}`);
+                    const url = `${window.location.origin}/share/${res.data.shareId}`;
+                    await navigator.clipboard.writeText(url);
+                    showToast('Share link copied to clipboard!');
+                } catch {
+                    showToast('Timetable saved but failed to get share link.');
+                }
             }
         }
     };
@@ -254,7 +268,7 @@ export default function TimetablePage() {
             <div className="w-[95%] max-w-[1400px] bg-[#FFFBF0] rounded-[32px] p-8 my-8 pb-4 shadow-sm">
                 <div className="flex items-center gap-4 pb-6 ml-2">
                     <h1 className="text-[26px] font-bold text-black">Timetables Generated</h1>
-                   
+
                 </div>
 
                 {/* Main Table Container */}
@@ -551,7 +565,7 @@ export default function TimetablePage() {
                             <button
                                 onClick={() => {
                                     setShowSaveModal(false);
-                                    handleSave(false, timetableTitle);
+                                    handleSave(timetableTitle);
                                 }}
                                 disabled={isSaving || !timetableTitle.trim()}
                                 className="px-6 py-2.5 rounded-xl font-bold bg-[#A0C4FF] text-black hover:bg-[#8ab2f2] transition-colors disabled:opacity-50"

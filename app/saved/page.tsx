@@ -252,17 +252,14 @@ export default function SavedPage() {
 
     async function handleCopyLink() {
         if (!selectedTT) return;
-        if (!selectedTT.isPublic) {
-            await axios.patch(`/api/timetables/${selectedTT._id}`, { isPublic: true });
-            setSelectedTT({ ...selectedTT, isPublic: true });
-            setTimetables(prev =>
-                (prev ?? []).map(t => (t._id === selectedTT._id ? { ...t, isPublic: true } : t))
-            );
+        try {
+            const { data } = await axios.get(`/api/timetables/${selectedTT._id}`);
+            const url = `${window.location.origin}/share/${data.shareId}`;
+            await navigator.clipboard.writeText(url);
+            showToast('Share link copied to clipboard!');
+        } catch {
+            showToast('Failed to copy share link. Please try again.');
         }
-        const { data } = await axios.get(`/api/timetables/${selectedTT._id}`);
-        const url = `${window.location.origin}/share/${data.shareId}`;
-        await navigator.clipboard.writeText(url);
-        showToast('Share link copied to clipboard!');
     }
 
     const displayTimetables = timetables ?? [];

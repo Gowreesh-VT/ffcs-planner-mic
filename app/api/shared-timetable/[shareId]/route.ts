@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
 
+// Prevent Next.js from caching this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
     await dbConnect();
 
@@ -18,16 +21,8 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
 
-        if (!timetable.isPublic) {
-            return NextResponse.json({
-                success: false,
-                message: 'Timetable is private',
-                timetable: {
-                    title: timetable.title,
-                },
-            });
-        }
-
+        // Any timetable with a shareId can be viewed via share link.
+        // The shareId itself acts as access control.
         return NextResponse.json({
             success: true,
             timetable: {
