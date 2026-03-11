@@ -21,6 +21,51 @@
   justify-content: center;
 }
 
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.empty-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.empty-desc {
+  font-size: 15px;
+  color: #6B7280;
+  max-width: 340px;
+}
+
+.empty-btn {
+  margin-top: 8px;
+  padding: 12px 28px;
+  background: #A0C4FF;
+  color: #1E3A8A;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.empty-btn:hover {
+  background: #8ab2f2;
+}
+
 /* ── Spinners ── */
 .spinner {
   border-radius: 50%;
@@ -1016,53 +1061,128 @@
 
 .dv-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 700px;
   border-collapse: collapse;
   font-size: 10px;
 }
 
-.dv-th-day-header {
-  width: 60px;
-}
-
-.dv-th-section {
-  background: #F9FAFB;
-  text-align: center;
+/* First-column row labels (Theory Hours / Lab Hours) */
+.dv-th-row-label {
   font-size: 11px;
   font-weight: 700;
   color: #374151;
-  padding: 8px 4px;
-  border-bottom: 1.5px solid #E5E7EB;
-  border-left: 2px solid #E5E7EB;
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid #D1FAE5;
+  white-space: nowrap;
+  width: 72px;
 }
 
+.dv-th-label-theory {
+  background: #BBF7D0;
+}
+
+.dv-th-label-lab {
+  background: #FEF08A;
+}
+
+/* Time-column headers */
 .dv-th-time {
-  padding: 4px 2px;
+  padding: 5px 2px;
   text-align: center;
   font-size: 9px;
   font-weight: 500;
-  color: #6B7280;
-  border-bottom: 1px solid #F3F4F6;
+  color: #374151;
+  border: 1px solid #E5E7EB;
   min-width: 52px;
   line-height: 1.3;
   white-space: nowrap;
 }
 
+.dv-th-time-theory {
+  background: #DCFCE7;
+}
+
+.dv-th-time-lab {
+  background: #FEFCE8;
+}
+
+/* Day label cell (spans 2 rows) */
 .dv-td-day {
   font-size: 11px;
   font-weight: 700;
   color: #374151;
-  padding: 6px 8px;
-  border-bottom: 1px solid #F3F4F6;
+  padding: 6px 10px;
+  border: 1px solid #E5E7EB;
   white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+  background: #F9FAFB;
+}
+
+/* Base data cell */
+.dv-td {
+  padding: 3px;
+  border: 1px solid #E5E7EB;
+  vertical-align: middle;
+  text-align: center;
+  height: 46px;
+}
+
+/* Theory empty — light green */
+.dv-td-theory-empty {
+  background: #DCFCE7;
+}
+
+/* Theory filled — darker green */
+.dv-td-theory-filled {
+  background: #86EFAC;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Lab empty — light yellow */
+.dv-td-lab-empty {
+  background: #FEFCE8;
+}
+
+/* Lab filled — darker yellow */
+.dv-td-lab-filled {
+  background: #FDE68A;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Lunch header cell */
+.dv-th-lunch {
+  background: #F3F4F6;
+  color: #6B7280;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 2px;
+  text-align: center;
+  border: 1px solid #E5E7EB;
+  width: 24px;
+  min-width: 24px;
   vertical-align: middle;
 }
 
-.dv-td {
-  padding: 3px;
-  border-bottom: 1px solid #F9FAFB;
+/* Lunch data cell */
+.dv-td-lunch {
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
   vertical-align: middle;
   text-align: center;
+  width: 24px;
+  min-width: 24px;
+  padding: 2px 0;
+}
+
+.dv-lunch-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #9CA3AF;
+  display: block;
+  text-align: center;
+  letter-spacing: 0;
 }
 
 .dv-cell-filled {
@@ -1075,29 +1195,32 @@
 }
 
 .dv-cell-slot {
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   color: #1E293B;
+  margin-bottom: 2px;
 }
 
 .dv-cell-code {
-  font-size: 8px;
-  color: #374151;
-  opacity: 0.85;
+  font-size: 8.5px;
+  color: #1E293B;
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .dv-cell-faculty {
   font-size: 7px;
-  color: #4B5563;
-  opacity: 0.75;
+  color: #374151;
+  opacity: 0.8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 50px;
+  max-width: 54px;
+  margin: 0 auto;
 }
 
 .dv-cell-empty {
-  font-size: 9px;
+  font-size: 10px;
   color: #9CA3AF;
   font-weight: 500;
 }

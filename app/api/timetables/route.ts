@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
     await dbConnect();
 
     try {
-        const timetables = await Timetable.find({ owner }).lean();
+        const timetables = await Timetable.find({
+  owner,
+  isPublic: false
+}).lean();
         return NextResponse.json(timetables, { headers: NO_STORE_HEADERS });
     } catch {
         return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });

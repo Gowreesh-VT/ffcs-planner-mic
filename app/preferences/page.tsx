@@ -390,10 +390,10 @@ export default function PreferencesPage() {
     const canAddAnotherProfessor = faculties.some(faculty => !selectedFaculties.includes(faculty));
 
     return (
-        <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+        <div className={`h-screen bg-[#F5E6D3] font-sans flex flex-col overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {/* Main Content */}
-            <div className=" p-10">
-                <div className="flex items-center gap-4 mb-20">
+            <div className="flex-1 p-10 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex items-center gap-4 mb-8 shrink-0">
                     <h1 className="text-4xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
                     {editingTimetableTitle && (
                         <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2 animate-lucid-fade-up">
@@ -405,7 +405,7 @@ export default function PreferencesPage() {
                     )}
                 </div>
 
-                <div className="flex gap-6 h-[600px]">
+                <div className="flex gap-6 flex-1 min-h-0">
                     {/* Step Panels */}
                     {[1, 2, 3, 4, 5, 6].map(stepNum => (
                         <div
