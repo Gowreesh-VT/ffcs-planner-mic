@@ -246,8 +246,8 @@ export default function TimetablePage() {
 
 
             <div className="w-[95%] max-w-[1400px] bg-[#FFFBF0] rounded-[32px] p-8 my-8 pb-4 shadow-sm">
-                <div className="flex items-center gap-4 pb-6 ml-2">
-                    <h1 className="text-[26px] font-bold text-black">Timetables Generated</h1>
+                <div className="flex items-center gap-4 mb-8">
+                    <h1 className="text-4xl font-bold text-black">Timetables Generated</h1>
                     {timetableTitle && (
                         <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2">
                             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

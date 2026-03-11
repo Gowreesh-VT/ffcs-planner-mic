@@ -336,7 +336,7 @@ export default function CoursesPage() {
         <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             <div className="flex-1 p-8">
                 <div className="flex items-center gap-4 mb-8">
-                    <h1 className="text-4xl font-bold text-black animate-lucid-fade-up">Your Faculty Preferences</h1>
+                    <h1 className="text-4xl font-bold text-black">Your Faculty Preferences</h1>
                     {editingTimetableTitle && (
                         <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2 animate-lucid-fade-up">
                             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

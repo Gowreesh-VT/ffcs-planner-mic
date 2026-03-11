@@ -298,7 +298,9 @@ export default function SavedPage() {
                 <>
                     {/* Main content */}
                     <div className="main-content">
-                        <h1 className="page-title" style={{ marginBottom: '4rem' }}>View Your Saved Timetable</h1>
+                        <div className="flex items-center gap-4 mb-8">
+                            <h1 className="text-4xl font-bold text-black">View Your Saved Timetable</h1>
+                        </div>
 
                         <div className="cards-outer">
                             {loading ? (
