@@ -1321,16 +1321,3 @@
   font-size: 13px;
   color: #374151;
 }
-
-/* ── Interactive button responsiveness ── */
-button:not(:disabled):active {
-  transform: scale(0.95);
-}
-
-button {
-  transition: all 0.2s ease;
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}

@@ -252,16 +252,9 @@ export default function TimetablePage() {
 
 
             <div className="w-[95%] max-w-[1400px] bg-[#FFFBF0] rounded-[32px] p-8 my-8 pb-4 shadow-sm">
-                <div className="flex items-center gap-4 mb-8">
-                    <h1 className="text-4xl font-bold text-black">Timetables Generated</h1>
-                    {timetableTitle && (
-                        <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span className="text-blue-800 font-semibold text-sm">Editing: {timetableTitle}</span>
-                        </div>
-                    )}
+                <div className="flex items-center gap-4 pb-6 ml-2">
+                    <h1 className="text-[26px] font-bold text-black">Timetables Generated</h1>
+                   
                 </div>
 
                 {/* Main Table Container */}
@@ -436,7 +429,7 @@ export default function TimetablePage() {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="bg-white border-t border-gray-300 py-4 px-8 shadow-lg animate-lucid-fade-up-delayed w-full mt-auto sticky bottom-0 z-50">
+            <div className="bg-white border-t border-gray-300 py-4 px-8 shadow-lg animate-lucid-fade-up-delayed w-full mt-auto">
                 <div className="flex items-center justify-between max-w-[1400px] mx-auto">
                     <div className="flex items-center gap-3">
                         {session?.user?.image ? (
@@ -457,7 +450,7 @@ export default function TimetablePage() {
                                     if (num === 3) router.push('/timetable');
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${num === 3 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700 hover:bg-[#A0C4FF]/60'}`}
+                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 3 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'}`}
                             >
                                 {num === 3 ? '3. Timetable' : num}
                             </button>
@@ -470,13 +463,13 @@ export default function TimetablePage() {
                                 // Keep editing state when going back to make more changes
                                 router.push('/courses');
                             }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
                         >
                             Previous
                         </button>
                         <button
                             onClick={() => router.push('/saved')}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer"
                         >
                             Next
                         </button>
@@ -485,94 +478,90 @@ export default function TimetablePage() {
             </div>
 
             {/* Popover */}
-            {
-                selectedSlot && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/20 backdrop-blur-[4px]" onClick={() => setSelectedSlot(null)}>
-                        <div
-                            className="bg-white rounded-[40px] shadow-2xl p-12 w-[90%] max-w-[500px] relative animate-[scaleIn_0.2s_ease] border-4"
-                            style={{ borderColor: getSlotColor(selectedSlot.courseCode, allCodes) }}
-                            onClick={e => e.stopPropagation()}
+            {selectedSlot && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/20 backdrop-blur-[4px]" onClick={() => setSelectedSlot(null)}>
+                    <div
+                        className="bg-white rounded-[40px] shadow-2xl p-12 w-[90%] max-w-[500px] relative animate-[scaleIn_0.2s_ease] border-4"
+                        style={{ borderColor: getSlotColor(selectedSlot.courseCode, allCodes) }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setSelectedSlot(null)}
+                            className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors text-black"
                         >
-                            <button
-                                onClick={() => setSelectedSlot(null)}
-                                className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors text-black"
-                            >
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                            </button>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
 
-                            <div className="mb-10">
-                                <span className="px-5 py-2 rounded-full text-[12px] font-black bg-gray-100 text-gray-500 uppercase tracking-widest mb-4 inline-block">Course Details</span>
-                                <h2 className="text-[32px] font-black text-black leading-tight mt-2">{selectedSlot.courseCode}</h2>
-                                <p className="text-[18px] font-bold text-gray-600 mt-2">{selectedSlot.courseName}</p>
+                        <div className="mb-10">
+                            <span className="px-5 py-2 rounded-full text-[12px] font-black bg-gray-100 text-gray-500 uppercase tracking-widest mb-4 inline-block">Course Details</span>
+                            <h2 className="text-[32px] font-black text-black leading-tight mt-2">{selectedSlot.courseCode}</h2>
+                            <p className="text-[18px] font-bold text-gray-600 mt-2">{selectedSlot.courseName}</p>
+                        </div>
+
+                        <div className="space-y-8">
+                            <div className="flex gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">👨‍🏫</div>
+                                <div>
+                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Faculty</p>
+                                    <p className="text-[18px] font-bold text-black">{selectedSlot.facultyName}</p>
+                                </div>
                             </div>
-
-                            <div className="space-y-8">
-                                <div className="flex gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">👨‍🏫</div>
-                                    <div>
-                                        <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Faculty</p>
-                                        <p className="text-[18px] font-bold text-black">{selectedSlot.facultyName}</p>
-                                    </div>
+                            <div className="flex gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">🕒</div>
+                                <div>
+                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Slot</p>
+                                    <p className="text-[18px] font-bold text-black">{selectedSlot.slotName}</p>
                                 </div>
-                                <div className="flex gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">🕒</div>
-                                    <div>
-                                        <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Slot</p>
-                                        <p className="text-[18px] font-bold text-black">{selectedSlot.slotName}</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">📍</div>
-                                    <div>
-                                        <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Classroom</p>
-                                        <p className="text-[18px] font-bold text-black">Main Campus - TBD</p>
-                                    </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">📍</div>
+                                <div>
+                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Classroom</p>
+                                    <p className="text-[18px] font-bold text-black">Main Campus - TBD</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {/* Save Modal */}
-            {
-                showSaveModal && (
-                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveModal(false)}>
-                        <div
-                            className="bg-white rounded-[24px] shadow-2xl p-8 w-[90%] max-w-[400px] relative animate-[scaleIn_0.2s_ease]"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <h2 className="text-[24px] font-black text-black mb-4">Save Timetable</h2>
-                            <input
-                                type="text"
-                                value={timetableTitle}
-                                onChange={(e) => setTimetableTitle(e.target.value)}
-                                className="w-full p-4 border-2 border-gray-100 rounded-xl mb-6 text-black font-semibold text-[16px] focus:border-[#A0C4FF] focus:ring-2 focus:ring-[#A0C4FF]/20 outline-none transition-all placeholder:font-medium"
-                                placeholder="Enter a title..."
-                                autoFocus
-                            />
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setShowSaveModal(false)}
-                                    className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowSaveModal(false);
-                                        handleSave(false, timetableTitle);
-                                    }}
-                                    disabled={isSaving || !timetableTitle.trim()}
-                                    className="px-6 py-2.5 rounded-xl font-bold bg-[#A0C4FF] text-black hover:bg-[#8ab2f2] transition-colors disabled:opacity-50"
-                                >
-                                    Save
-                                </button>
-                            </div>
+            {showSaveModal && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveModal(false)}>
+                    <div
+                        className="bg-white rounded-[24px] shadow-2xl p-8 w-[90%] max-w-[400px] relative animate-[scaleIn_0.2s_ease]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 className="text-[24px] font-black text-black mb-4">Save Timetable</h2>
+                        <input
+                            type="text"
+                            value={timetableTitle}
+                            onChange={(e) => setTimetableTitle(e.target.value)}
+                            className="w-full p-4 border-2 border-gray-100 rounded-xl mb-6 text-black font-semibold text-[16px] focus:border-[#A0C4FF] focus:ring-2 focus:ring-[#A0C4FF]/20 outline-none transition-all placeholder:font-medium"
+                            placeholder="Enter a title..."
+                            autoFocus
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowSaveModal(false)}
+                                className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowSaveModal(false);
+                                    handleSave(false, timetableTitle);
+                                }}
+                                disabled={isSaving || !timetableTitle.trim()}
+                                className="px-6 py-2.5 rounded-xl font-bold bg-[#A0C4FF] text-black hover:bg-[#8ab2f2] transition-colors disabled:opacity-50"
+                            >
+                                Save
+                            </button>
                         </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     );
 }
