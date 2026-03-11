@@ -422,8 +422,8 @@ export default function CoursesPage() {
                                                     disabled={index === 0 || isDusting || isReordering}
                                                     title="Move up"
                                                     className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === 0 || isDusting || isReordering
-                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                            : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
+                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
                                                         }`}
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6" /></svg>
@@ -434,8 +434,8 @@ export default function CoursesPage() {
                                                     disabled={index === faculties.length - 1 || isDusting || isReordering}
                                                     title="Move down"
                                                     className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === faculties.length - 1 || isDusting || isReordering
-                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                            : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
+                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
                                                         }`}
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
@@ -446,8 +446,8 @@ export default function CoursesPage() {
                                                     disabled={isDusting}
                                                     title="Remove"
                                                     className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${isDusting
-                                                            ? 'border-red-100 text-red-200 cursor-not-allowed'
-                                                            : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
+                                                        ? 'border-red-100 text-red-200 cursor-not-allowed'
+                                                        : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
                                                         }`}
                                                 >
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
@@ -535,7 +535,7 @@ export default function CoursesPage() {
                                     if (num === 3) router.push('/timetable');
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 2 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'
+                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${num === 2 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700 hover:bg-[#A0C4FF]/60'
                                     }`}
                             >
                                 {num === 2 ? '2. Faculty Preferences' : num}
@@ -550,13 +550,13 @@ export default function CoursesPage() {
                                 deleteCookie('editingTimetableTitle');
                                 router.push('/preferences');
                             }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
                         >
                             Previous
                         </button>
                         <button
                             onClick={() => router.push('/timetable')}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition cursor-pointer"
+                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
                         >
                             Next
                         </button>
