@@ -347,17 +347,7 @@ export default function CoursesPage() {
     return (
         <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             <div className="flex-1 p-8">
-                <div className="flex items-center gap-4 mb-8">
-                    <h1 className="text-4xl font-bold text-black">Your Faculty Preferences</h1>
-                    {editingTimetableTitle && (
-                        <div className="bg-blue-100 border-2 border-blue-400 rounded-lg px-4 py-2 flex items-center gap-2 animate-lucid-fade-up">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span className="text-blue-800 font-semibold text-sm">Editing: {editingTimetableTitle}</span>
-                        </div>
-                    )}
-                </div>
+                
 
                 {clashingUids.size > 0 && (
                     <div className="bg-red-100 border-2 border-red-400 rounded-lg px-6 py-4 mb-6 flex items-center gap-3 animate-lucid-fade-up">
@@ -402,55 +392,60 @@ export default function CoursesPage() {
                                 return (
                                     <div key={faculty.uid}>
                                         <div
-                                            className={`grid grid-cols-[56px_160px_1fr_140px_160px_120px] border-b border-gray-100 items-center transition-colors ${isDusting ? 'pointer-events-none' : ''
-                                                } ${hasClash ? 'bg-red-50' : 'bg-white hover:bg-gray-50'
-                                                } ${rowEffects[faculty.uid] || ''}`}
+                                            className={`grid grid-cols-[56px_160px_1fr_140px_160px_120px] border-b border-gray-100 items-center transition-colors ${
+                                                isDusting ? 'pointer-events-none' : ''
+                                            } ${
+                                                hasClash ? 'bg-red-50' : 'bg-white hover:bg-gray-50'
+                                            } ${rowEffects[faculty.uid] || ''}`}
                                         >
-                                            <div className={`px-4 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>{faculty.no}</div>
-                                            <div className={`px-4 py-4 text-sm font-bold font-mono ${hasClash ? 'text-red-600' : 'text-gray-900'}`}>{faculty.courseCode}</div>
-                                            <div className={`px-4 py-4 text-sm ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>
+                                            <div className={`px-4 py-4 text-sm font-semibold ${ hasClash ? 'text-red-600' : 'text-gray-800'}`}>{faculty.no}</div>
+                                            <div className={`px-4 py-4 text-sm font-bold font-mono ${ hasClash ? 'text-red-600' : 'text-gray-900'}`}>{faculty.courseCode}</div>
+                                            <div className={`px-4 py-4 text-sm ${ hasClash ? 'text-red-600' : 'text-gray-800'}`}>
                                                 {nameParts.map((n, i) => <div key={i}>{n}</div>)}
                                             </div>
-                                            <div className={`px-4 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>
+                                            <div className={`px-4 py-4 text-sm font-semibold ${ hasClash ? 'text-red-600' : 'text-gray-800'}`}>
                                                 {slotParts.map((s, i) => <div key={i}>{s}</div>)}
                                             </div>
-                                            <div className={`px-4 py-4 text-sm ${hasClash ? 'text-red-600' : 'text-gray-600'}`}>{faculty.facultyName}</div>
+                                            <div className={`px-4 py-4 text-sm ${ hasClash ? 'text-red-600' : 'text-gray-600'}`}>{faculty.facultyName}</div>
                                             <div className="px-4 py-4 flex items-center gap-1">
                                                 {/* Up button */}
                                                 <button
                                                     onClick={() => handleMoveUp(index)}
                                                     disabled={index === 0 || isDusting || isReordering}
                                                     title="Move up"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === 0 || isDusting || isReordering
-                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
-                                                        }`}
+                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${
+                                                        index === 0 || isDusting || isReordering
+                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                            : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
+                                                    }`}
                                                 >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6" /></svg>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                                                 </button>
                                                 {/* Down button */}
                                                 <button
                                                     onClick={() => handleMoveDown(index)}
                                                     disabled={index === faculties.length - 1 || isDusting || isReordering}
                                                     title="Move down"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === faculties.length - 1 || isDusting || isReordering
-                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
-                                                        }`}
+                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${
+                                                        index === faculties.length - 1 || isDusting || isReordering
+                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                            : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
+                                                    }`}
                                                 >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
                                                 </button>
                                                 {/* Delete button */}
                                                 <button
                                                     onClick={() => handleRemove(index)}
                                                     disabled={isDusting}
                                                     title="Remove"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${isDusting
-                                                        ? 'border-red-100 text-red-200 cursor-not-allowed'
-                                                        : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
-                                                        }`}
+                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${
+                                                        isDusting
+                                                            ? 'border-red-100 text-red-200 cursor-not-allowed'
+                                                            : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
+                                                    }`}
                                                 >
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                                                 </button>
                                             </div>
                                         </div>
@@ -535,8 +530,9 @@ export default function CoursesPage() {
                                     if (num === 3) router.push('/timetable');
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${num === 2 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700 hover:bg-[#A0C4FF]/60'
-                                    }`}
+                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${
+                                    num === 2 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'
+                                }`}
                             >
                                 {num === 2 ? '2. Faculty Preferences' : num}
                             </button>
@@ -550,13 +546,13 @@ export default function CoursesPage() {
                                 deleteCookie('editingTimetableTitle');
                                 router.push('/preferences');
                             }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
                         >
                             Previous
                         </button>
                         <button
                             onClick={() => router.push('/timetable')}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition cursor-pointer"
                         >
                             Next
                         </button>
