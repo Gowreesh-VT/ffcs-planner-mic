@@ -13,32 +13,52 @@ export const exportToPDF = async (elementId: string, filename: string = 'timetab
         return;
     }
 
+    // Temporarily remove overflow clipping on the target element and its ancestors
+    // so the full content is captured, not just the visible viewport.
+    const overflowFixups: { el: HTMLElement; overflow: string; overflowX: string }[] = [];
+    let walker: HTMLElement | null = element;
+    while (walker) {
+        const computed = window.getComputedStyle(walker);
+        if (
+            computed.overflow !== 'visible' ||
+            computed.overflowX !== 'visible'
+        ) {
+            overflowFixups.push({
+                el: walker,
+                overflow: walker.style.overflow,
+                overflowX: walker.style.overflowX,
+            });
+            walker.style.overflow = 'visible';
+            walker.style.overflowX = 'visible';
+        }
+        walker = walker.parentElement;
+    }
+
     try {
-        // Capture the element as a PNG image directly using html-to-image
+        // Capture the element as a PNG image using html-to-image
         // which natively supports modern CSS features like lab() and oklch()
-        // unlike html2canvas.
         const dataUrl = await toPng(element, {
             backgroundColor: '#FFFBF0',
-            pixelRatio: 2, // High resolution
+            pixelRatio: 2,
             style: {
-                // Ensure no unexpected overflow hiding ruins the capture
                 transform: 'scale(1)',
-                transformOrigin: 'top left'
-            }
+                transformOrigin: 'top left',
+            },
         });
 
         // Get image dimensions to create a properly sized PDF
         const img = new Image();
         img.src = dataUrl;
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
             img.onload = resolve;
+            img.onerror = reject;
         });
 
         // PDF dimensions based on the element
         const pdf = new jsPDF({
             orientation: img.width > img.height ? 'landscape' : 'portrait',
             unit: 'px',
-            format: [img.width, img.height]
+            format: [img.width, img.height],
         });
 
         pdf.addImage(dataUrl, 'PNG', 0, 0, img.width, img.height);
@@ -46,5 +66,11 @@ export const exportToPDF = async (elementId: string, filename: string = 'timetab
     } catch (error) {
         console.error('Error generating PDF:', error);
         throw error;
+    } finally {
+        // Restore original overflow values
+        for (const fix of overflowFixups) {
+            fix.el.style.overflow = fix.overflow;
+            fix.el.style.overflowX = fix.overflowX;
+        }
     }
 };

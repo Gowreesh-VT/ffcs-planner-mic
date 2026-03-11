@@ -4,6 +4,9 @@ import { authOptions } from '../../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
 
+// Prevent Next.js from caching this route
+export const dynamic = 'force-dynamic';
+
 const NO_STORE_HEADERS = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     Pragma: 'no-cache',
