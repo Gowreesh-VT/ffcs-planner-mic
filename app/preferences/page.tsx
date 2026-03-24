@@ -65,6 +65,10 @@ const STEP_LABELS = [
     'Faculty Priority',
 ];
 
+const selectionButtonClass = 'w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5';
+const selectionButtonSelectedClass = 'bg-white ring-2 ring-blue-500 shadow-md';
+const selectionButtonUnselectedClass = 'bg-white/80 hover:bg-white hover:shadow-sm';
+
 export default function PreferencesPage() {
     const router = useRouter();
     const { data: session } = useSession();
@@ -434,9 +438,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={dept}
                                                         onClick={() => handleDepartmentSelect(dept)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${selectedDepartments.includes(dept)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} cursor-pointer ${selectedDepartments.includes(dept)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {deptDisplayName(dept)}
@@ -452,9 +456,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={domain}
                                                         onClick={() => handleDomainSelect(domain)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${selectedDomains.includes(domain)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} cursor-pointer ${selectedDomains.includes(domain)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {domain}
@@ -474,9 +478,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={subject}
                                                         onClick={() => handleSubjectSelect(subject)}
-                                                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 hover:-translate-y-0.5 ${selectedSubjects.includes(subject)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} ${selectedSubjects.includes(subject)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         <div className="font-mono font-bold text-sm">
@@ -523,9 +527,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={idx}
                                                         onClick={() => handleFacultySelect(faculty)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5 ${selectedFaculties.includes(faculty)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} ${selectedFaculties.includes(faculty)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {faculty}
