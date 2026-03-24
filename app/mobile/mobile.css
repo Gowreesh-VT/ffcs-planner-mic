@@ -1,0 +1,115 @@
+.phone-anim {
+    position: relative;
+  animation: deviceFlow 6s infinite ease-in-out;
+  transform-origin: center;
+}
+
+/* IMAGE initially hidden */
+.screen-image {
+  opacity: 0;
+  animation: screenSwap 6s infinite ease-in-out;
+}
+
+/* TEXT visible initially */
+.screen-text {
+  opacity: 1;
+  animation: textSwap 6s infinite ease-in-out;
+}
+
+/* DEVICE ROTATION */
+
+@keyframes deviceFlow {
+
+    0% { transform: rotate(0deg) scale(1); }
+    15% { transform: rotate(0deg) scale(1); }
+    
+    30% { transform: rotate(-90deg) scale(1.5); }
+    55% { transform: rotate(-90deg) scale(1.5); }
+    
+  70% { transform: rotate(-90deg) scale(1); }
+  100% { transform: rotate(-90deg) scale(1); }
+}
+
+/* IMAGE appears when rotated */
+
+@keyframes screenSwap {
+    
+    0% { opacity: 0; }
+    25% { opacity: 0; }
+    
+    30% { opacity: 1; }
+    60% { opacity: 1; }
+    
+    100% { opacity: 1; }
+}
+
+/* TEXT disappears when rotated */
+
+@keyframes textSwap {
+    
+    0% { opacity: 1; }
+    25% { opacity: 1; }
+    
+    30% { opacity: 0; }
+    60% { opacity: 0; }
+    
+    100% { opacity: 1; }
+}
+
+
+/* wrapper must be relative */
+
+
+
+/* ⭐ BLACK BAR */
+
+.device-bar {
+  position: absolute;
+  height: 228px;
+  width: 10px;
+  border-radius: 4px;
+  background-color: black;
+  left: -20px;
+  top:-3px;
+  opacity: 0;
+  animation: barAnim 6s infinite ease-out;
+}
+
+
+@keyframes barAnim {
+
+  /* hidden */
+ 0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+
+  54% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+
+  /* ⭐ START growing WITH shrink */
+  55% {
+    opacity: 1;
+    transform: scaleY(0.2);
+  }
+
+  /* ⭐ Fully grown when shrink finishes */
+  70% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  /* Hold */
+  90% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  /* Disappear */
+  100% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
