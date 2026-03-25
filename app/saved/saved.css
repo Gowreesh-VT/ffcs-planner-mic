@@ -93,6 +93,22 @@
   }
 }
 
+@keyframes lucidFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-lucid-fade-up-delayed {
+  animation: lucidFadeUp 520ms ease-out;
+}
+
 /* ── Toast ── */
 .toast {
   position: fixed;
@@ -1259,6 +1275,25 @@
 
 .dv-share-btn:hover {
   background: #EFF6FF;
+}
+
+.dv-share-active-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  border: 1.5px solid #10B981;
+  background: #ECFDF5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dv-share-active-btn:hover {
+  background: #D1FAE5;
 }
 
 .dv-download-btn {

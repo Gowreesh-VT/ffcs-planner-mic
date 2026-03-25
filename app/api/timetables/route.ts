@@ -14,33 +14,32 @@ const NO_STORE_HEADERS = {
 };
 
 export async function GET(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const owner = searchParams.get('owner');
-
-    if (!owner) {
-        return NextResponse.json({ error: 'Missing owner' }, { status: 400 });
-    }
-    if (owner !== session.user.email) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    await dbConnect();
-
     try {
-        const timetables = await Timetable.find({
-            owner,
-        })
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const owner = searchParams.get('owner');
+
+        if (!owner) {
+            return NextResponse.json({ error: 'Missing owner' }, { status: 400 });
+        }
+        if (owner !== session.user.email) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        await dbConnect();
+
+        const timetables = await Timetable.find({ owner })
             .sort({ createdAt: -1 })
             .lean();
         return NextResponse.json(timetables, { headers: NO_STORE_HEADERS });
-    } catch {
-        return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    } catch (err: any) {
+        console.error('[timetables/list] Error:', err?.message || err);
+        return NextResponse.json({ error: 'Failed to fetch', detail: err?.message }, { status: 500 });
     }
 }
 

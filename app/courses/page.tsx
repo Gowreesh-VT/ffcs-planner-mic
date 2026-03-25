@@ -564,7 +564,8 @@ export default function CoursesPage() {
                     <div className="flex gap-3">
                         <button
                             onClick={() => {
-                                router.push('/');
+                                deleteCookie('editingTimetableId');
+                                router.back();
                             }}
                             className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
                         >

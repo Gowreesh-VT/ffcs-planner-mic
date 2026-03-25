@@ -10,6 +10,7 @@ import { generateTT } from '@/lib/utils';
 import { getSlotViewPayload } from '@/lib/slot-view';
 import { fullCourseData, timetableDisplayData } from '@/lib/type';
 import { clearPlannerClientCache } from '@/lib/clientCache';
+import LoginModal from '@/components/loginPopup';
 
 const setCookie = (name: string, value: string) => {
     if (typeof document === 'undefined') return;
@@ -54,6 +55,7 @@ export default function TimetablePage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [timetableTitle, setTimetableTitle] = useState('My Schedule');
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     const { scheduleRows, leftTimes, rightTimes } = useMemo(() => getSlotViewPayload(), []);
 
@@ -95,7 +97,7 @@ export default function TimetablePage() {
 
     const handleSave = async (customTitle?: string, options?: { skipRedirect?: boolean }) => {
         if (!session?.user?.email) {
-            showToast('Please sign in to save or share your timetable.');
+            setShowLoginModal(true);
             return null;
         }
         if (isSaving || currentTT.length === 0) return null;
@@ -152,9 +154,10 @@ export default function TimetablePage() {
                     return res.data.timetable;
                 }
             }
-        } catch (error) {
-            console.error('Save error:', error);
-            showToast('Failed to save timetable.');
+        } catch (error: any) {
+            const detail = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
+            console.error('Save error:', detail, error);
+            showToast(`Failed to save: ${detail}`);
         } finally {
             setIsSaving(false);
         }
@@ -210,8 +213,7 @@ export default function TimetablePage() {
     const handleShare = async () => {
         console.log('handleShare called!');
         if (!session?.user?.email) {
-            window.alert('Please sign in to share your timetable.');
-            showToast('Please sign in to share your timetable.');
+            setShowLoginModal(true);
             return;
         }
         if (currentTT.length === 0) {
@@ -271,9 +273,9 @@ export default function TimetablePage() {
                 window.prompt('Copy this share link:', url);
             }
         } catch (error: any) {
-            console.error('Share error:', error);
-            window.alert('Share Error: ' + (error?.message || String(error)));
-            showToast('Failed to share timetable. Please try again.');
+            const detail = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
+            console.error('Share error:', detail, error);
+            showToast(`Failed to share: ${detail}`);
         }
     };
 
@@ -501,7 +503,13 @@ export default function TimetablePage() {
                                 Download
                             </button>
                             <button
-                                onClick={() => setShowSaveModal(true)}
+                                onClick={() => {
+                                    if (!session?.user?.email) {
+                                        setShowLoginModal(true);
+                                        return;
+                                    }
+                                    setShowSaveModal(true);
+                                }}
                                 disabled={isSaving}
                                 className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
                             >
@@ -545,8 +553,7 @@ export default function TimetablePage() {
                     <div className="flex gap-3">
                         <button
                             onClick={() => {
-                                // Keep editing state when going back to make more changes
-                                router.push('/courses');
+                                router.back();
                             }}
                             className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
                         >
@@ -554,7 +561,10 @@ export default function TimetablePage() {
                         </button>
                         <button
                             onClick={() => {
-                                clearPlannerClientCache({ includeEditingState: true });
+                                if (!session?.user?.email) {
+                                    setShowLoginModal(true);
+                                    return;
+                                }
                                 router.push('/saved');
                             }}
                             className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer"
@@ -611,6 +621,11 @@ export default function TimetablePage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Login Modal */}
+            {showLoginModal && (
+                <LoginModal onClose={() => setShowLoginModal(false)} callbackUrl="/timetable" />
             )}
 
             {/* Save Modal */}

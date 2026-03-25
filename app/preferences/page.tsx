@@ -65,6 +65,10 @@ const STEP_LABELS = [
     'Faculty Priority',
 ];
 
+const selectionButtonClass = 'w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5';
+const selectionButtonSelectedClass = 'bg-white ring-2 ring-blue-500 shadow-md';
+const selectionButtonUnselectedClass = 'bg-white/80 hover:bg-white hover:shadow-sm';
+
 export default function PreferencesPage() {
     const router = useRouter();
     const { data: session } = useSession();
@@ -79,9 +83,19 @@ export default function PreferencesPage() {
     const [facultyPriority, setFacultyPriority] = useState<'slot' | 'faculty'>('slot');
     const [isVisible, setIsVisible] = useState(false);
 
-    const keepFirst = (items: string[]): string[] => (items.length > 0 ? [items[0]] : []);
+    const moveFacultyUp = (index: number) => {
+        if (index === 0) return;
+        const updated = [...selectedFaculties];
+        [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+        setSelectedFaculties(updated);
+    };
 
-
+    const moveFacultyDown = (index: number) => {
+        if (index === selectedFaculties.length - 1) return;
+        const updated = [...selectedFaculties];
+        [updated[index + 1], updated[index]] = [updated[index], updated[index + 1]];
+        setSelectedFaculties(updated);
+    };
     // Load preferences from cookies on mount
     useEffect(() => {
         const savedStep = getCookie('preferenceStep');
@@ -444,9 +458,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={dept}
                                                         onClick={() => handleDepartmentSelect(dept)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${selectedDepartments.includes(dept)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} cursor-pointer ${selectedDepartments.includes(dept)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {deptDisplayName(dept)}
@@ -465,9 +479,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={domain}
                                                         onClick={() => handleDomainSelect(domain)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${selectedDomains.includes(domain)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} cursor-pointer ${selectedDomains.includes(domain)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {domain}
@@ -490,9 +504,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={subject}
                                                         onClick={() => handleSubjectSelect(subject)}
-                                                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 hover:-translate-y-0.5 ${selectedSubjects.includes(subject)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} ${selectedSubjects.includes(subject)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         <div className="font-mono font-bold text-sm">
@@ -542,9 +556,9 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={idx}
                                                         onClick={() => handleFacultySelect(faculty)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5 ${selectedFaculties.includes(faculty)
-                                                            ? 'bg-white ring-2 ring-blue-500 shadow-md'
-                                                            : 'bg-white/80 hover:bg-white hover:shadow-sm'
+                                                        className={`${selectionButtonClass} ${selectedFaculties.includes(faculty)
+                                                            ? selectionButtonSelectedClass
+                                                            : selectionButtonUnselectedClass
                                                             }`}
                                                     >
                                                         {faculty}
@@ -569,17 +583,39 @@ export default function PreferencesPage() {
                                                     {selectedFaculties.length > 0 ? (
                                                         <div style={{ display: 'grid', gap: '8px' }}>
                                                             {selectedFaculties.map((faculty, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center bg-white p-2 rounded">
+                                                                <div key={idx} className="flex justify-between items-center bg-white p-3 rounded shadow-sm">
                                                                     <span className="text-sm font-semibold">{faculty}</span>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = selectedFaculties.filter((_, i) => i !== idx);
-                                                                            setSelectedFaculties(updated);
-                                                                        }}
-                                                                        className="text-red-500 hover:text-red-700 font-bold"
-                                                                    >
-                                                                        ×
-                                                                    </button>
+                                                                    
+                                                                    <div className="flex gap-2 items-center">
+                                                                        {/* UP BUTTON */}
+                                                                        <button
+                                                                            onClick={() => moveFacultyUp(idx)}
+                                                                            disabled={idx === 0}
+                                                                            className={`px-2 py-1 rounded border ${idx === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}`}
+                                                                        >
+                                                                            ↑
+                                                                        </button>
+
+                                                                        {/* DOWN BUTTON */}
+                                                                        <button
+                                                                            onClick={() => moveFacultyDown(idx)}
+                                                                            disabled={idx === selectedFaculties.length - 1}
+                                                                            className={`px-2 py-1 rounded border ${idx === selectedFaculties.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}`}
+                                                                        >
+                                                                            ↓
+                                                                        </button>
+
+                                                                        {/* DELETE */}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const updated = selectedFaculties.filter((_, i) => i !== idx);
+                                                                                setSelectedFaculties(updated);
+                                                                            }}
+                                                                            className="text-red-500 font-bold px-2"
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
