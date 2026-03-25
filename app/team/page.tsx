@@ -63,8 +63,15 @@ export default function TeamPage() {
                 {session.user?.image && (
                   <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
                 )}
-                <span className="font-semibold text-black pr-8">{session.user?.name}</span>
-                <span className={`text-black transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} style={{ marginLeft: '-25px', position: 'relative', top: '2px' }}>⌄</span>
+                <span className="font-semibold text-black">{session.user?.name}</span>
+                <svg
+                  className={`w-4 h-4 text-black transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
 
               {showUserMenu && (
