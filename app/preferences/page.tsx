@@ -55,6 +55,8 @@ const getCookie = (name: string): string | null => {
     return null;
 };
 
+const keepFirst = (arr: string[]): string[] => (arr.length > 0 ? [arr[0]] : []);
+
 const STEP_COLORS = ['#A0C4FF', '#FFB3D9', '#B5EAD7', '#A0C4FF', '#FFB3D9', '#B5EAD7'];
 const STEP_LABELS = [
     'Select Department',
