@@ -86,6 +86,7 @@ export default function PreferencesPage() {
     const [savedFacultyPreferences, setSavedFacultyPreferences] = useState<string[]>([]);
     const [facultyPriority, setFacultyPriority] = useState<'slot' | 'faculty'>('slot');
     const [isVisible, setIsVisible] = useState(false);
+    const [selectionError, setSelectionError] = useState('');
 
     const moveFacultyUp = (index: number) => {
         if (index === 0) return;
@@ -301,6 +302,7 @@ export default function PreferencesPage() {
     };
 
     const handleAddAnotherProfessor = () => {
+        setSelectionError('');
         setSelectedSlots([]);
         setSelectedFaculties([]);
         setCurrentStep(4);
@@ -308,6 +310,7 @@ export default function PreferencesPage() {
     };
 
     const handleDepartmentSelect = (dept: string) => {
+        setSelectionError('');
         setSelectedDepartments(prev => (prev[0] === dept ? [] : [dept]));
         setSelectedDomains([]);
         setSelectedSubjects([]);
@@ -316,6 +319,7 @@ export default function PreferencesPage() {
     };
 
     const handleDomainSelect = (domain: string) => {
+        setSelectionError('');
         setSelectedDomains(prev => (prev[0] === domain ? [] : [domain]));
         setSelectedSubjects([]);
         setSelectedSlots([]);
@@ -323,18 +327,21 @@ export default function PreferencesPage() {
     };
 
     const handleSubjectSelect = (subject: string) => {
+        setSelectionError('');
         setSelectedSubjects(prev => (prev[0] === subject ? [] : [subject]));
         setSelectedSlots([]);
         setSelectedFaculties([]);
     };
 
     const handleSlotSelect = (slot: string) => {
+        setSelectionError('');
         setSelectedSlots(prev =>
             prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]
         );
     };
 
     const handleFacultySelect = (faculty: string) => {
+        setSelectionError('');
         setSelectedFaculties(prev =>
             prev.includes(faculty) ? prev.filter(f => f !== faculty) : [...prev, faculty]
         );
@@ -342,6 +349,7 @@ export default function PreferencesPage() {
 
     const persistCurrentSelection = (resetWizard = true) => {
         if (selectedSubjects.length > 0 && selectedSlots.length > 0 && selectedFaculties.length > 0) {
+            setSelectionError('');
             let newCourses: fullCourseData[] = [];
 
             selectedDomains.forEach(domain => {
@@ -384,18 +392,53 @@ export default function PreferencesPage() {
             });
 
             if (newCourses.length > 0) {
-                newCourses.forEach(c => addCourse(c));
+                let existingCourses: fullCourseData[] = [];
 
                 try {
                     const existingCoursesRaw = getCookie('preferenceCourses');
-                    let existingCourses: fullCourseData[] = existingCoursesRaw ? JSON.parse(existingCoursesRaw) : [];
+                    existingCourses = existingCoursesRaw ? JSON.parse(existingCoursesRaw) : [];
+                } catch (error) {
+                    console.error('Error reading preferenceCourses cookie:', error);
+                }
+
+                const existingEntries = new Set(
+                    existingCourses.flatMap(course =>
+                        course.courseSlots.flatMap(courseSlot =>
+                            courseSlot.slotFaculties.map(faculty => `${course.courseCode}||${courseSlot.slotName}||${faculty.facultyName}`)
+                        )
+                    )
+                );
+
+                const duplicateEntry = newCourses.flatMap(course =>
+                    course.courseSlots.flatMap(courseSlot =>
+                        courseSlot.slotFaculties.map(faculty => ({
+                            key: `${course.courseCode}||${courseSlot.slotName}||${faculty.facultyName}`,
+                            courseCode: course.courseCode,
+                            courseName: course.courseName,
+                            slotName: courseSlot.slotName,
+                            facultyName: faculty.facultyName,
+                        }))
+                    )
+                ).find(entry => existingEntries.has(entry.key));
+
+                if (duplicateEntry) {
+                    setSelectionError(
+                        `${duplicateEntry.facultyName} is already added for ${duplicateEntry.courseCode} (${duplicateEntry.slotName}).`
+                    );
+                    return false;
+                }
+
+                newCourses.forEach(c => addCourse(c));
+
+                try {
+                    let updatedExistingCourses = [...existingCourses];
 
                     newCourses.forEach(course => {
-                        existingCourses = existingCourses.filter(existing => existing.id !== course.id);
-                        existingCourses.push(course);
+                        updatedExistingCourses = updatedExistingCourses.filter(existing => existing.id !== course.id);
+                        updatedExistingCourses.push(course);
                     });
 
-                    setCookie('preferenceCourses', JSON.stringify(existingCourses));
+                    setCookie('preferenceCourses', JSON.stringify(updatedExistingCourses));
                 } catch (error) {
                     console.error('Error saving preferenceCourses cookie:', error);
                     setCookie('preferenceCourses', JSON.stringify(newCourses));
@@ -490,6 +533,11 @@ export default function PreferencesPage() {
                                     </div>
 
                                     <div className="flex-1 bg-transparent p-2 lg:p-4 overflow-y-auto custom-scrollbar flex flex-col">
+                                        {selectionError && (
+                                            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                                                {selectionError}
+                                            </div>
+                                        )}
                                         {/* Step 1: Department Selection */}
                                         {stepNum === 1 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
@@ -591,7 +639,7 @@ export default function PreferencesPage() {
                                         {/* Step 5: Faculty Selection */}
                                         {stepNum === 5 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
-                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1">
+                                                <p className={`text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1 ${selectionError ? 'mt-1' : ''}`}>
                                                     Select one or more options
                                                 </p>
                                                 {faculties.length > 0 ? faculties.map((faculty, idx) => (

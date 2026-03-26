@@ -363,7 +363,7 @@ export default function CoursesPage() {
     const syncAndOpenTimetable = () => {
         const rowsForGeneration = allSubjectsMode ? faculties : visibleFaculties;
         const updatedCourses = buildPreferenceCoursesFromRows(rowsForGeneration);
-        setCookie('preferenceCourses', JSON.stringify(updatedCourses));
+        setCookie('generatedTimetableCourses', JSON.stringify(updatedCourses));
 
         const { result } = generateTT(updatedCourses);
         setTimetableData(result);
@@ -390,10 +390,11 @@ export default function CoursesPage() {
                             <h2 className="text-2xl font-bold text-[#1f1f1f]">Selected Courses</h2>
                         </div>
 
-                        <div className="grid grid grid-cols-[60px_140px_1.5fr_1fr_120px] border-b border-[#ededed] bg-[#fcfcfc] text-[#1f1f1f]">
+                        <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#ededed] bg-[#fcfcfc] text-[#1f1f1f]">
                             <div className="px-5 py-3 text-sm font-bold">No</div>
                             <div className="px-5 py-3 text-sm font-bold">Course Code</div>
                             <div className="px-5 py-3 text-sm font-bold">Course Name</div>
+                            <div className="px-5 py-3 text-sm font-bold">Faculty Name</div>
                             <div className="px-5 py-3 text-sm font-bold">Slot</div>
                             <div className="px-5 py-3 text-sm font-bold text-right">Actions</div>
                         </div>
@@ -413,12 +414,15 @@ export default function CoursesPage() {
                                     return (
                                         <div key={faculty.uid}>
                                             <div
-                                                className={`grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.5fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] items-center transition-colors ${isDusting ? 'pointer-events-none' : ''} ${hasClash ? 'bg-red-50' : 'bg-white hover:bg-[#f8f8f8]'} ${rowEffects[faculty.uid] || ''}`}
+                                                className={`grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] items-center transition-colors ${isDusting ? 'pointer-events-none' : ''} ${hasClash ? 'bg-red-50' : 'bg-white hover:bg-[#f8f8f8]'} ${rowEffects[faculty.uid] || ''}`}
                                             >
                                                 <div className={`px-5 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{faculty.no}</div>
                                                 <div className={`px-5 py-4 text-sm font-semibold font-mono ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{faculty.courseCode}</div>
                                                 <div className={`px-5 py-4 text-sm leading-relaxed ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
                                                     {nameParts.map((n, i) => <div key={i}>{n}</div>)}
+                                                </div>
+                                                <div className={`px-5 py-4 text-sm leading-relaxed ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
+                                                    {faculty.facultyName}
                                                 </div>
                                                 <div className={`px-5 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
                                                     {slotParts.map((s, i) => <div key={i}>{s}</div>)}
@@ -460,9 +464,9 @@ export default function CoursesPage() {
                                                 </div>
                                             </div>
                                             {deletedRow && deletedRow.index === index + 1 && (
-                                                <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.5fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                                <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
                                                     <div />
-                                                    <div className="col-span-2 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
+                                                    <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
                                                     <div className="px-5 py-3 col-span-2 text-right">
                                                         <button
                                                             onClick={handleUndoSingleDelete}
@@ -476,9 +480,9 @@ export default function CoursesPage() {
                                 })}
 
                                 {deletedRow && faculties.length === 0 && (
-                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.5fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
                                         <div />
-                                        <div className="col-span-2 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
+                                        <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
                                         <div className="px-5 py-3 col-span-2 text-right">
                                             <button
                                                 onClick={handleUndoSingleDelete}
@@ -489,9 +493,9 @@ export default function CoursesPage() {
                                 )}
 
                                 {faculties.length === 0 && lastRemovedFaculties && lastRemovedFaculties.length > 0 && (
-                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.5fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
                                         <div />
-                                        <div className="col-span-2 px-5 py-3 text-sm text-gray-600 italic">All courses deleted.</div>
+                                        <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">All courses deleted.</div>
                                         <div className="px-5 py-3 col-span-2 text-right">
                                             <button
                                                 onClick={handleUndoRemoveAll}

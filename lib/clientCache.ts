@@ -9,6 +9,7 @@ const PLANNER_COOKIE_KEYS = [
     'preferenceMultipleFaculties',
     'facultyPriority',
     'preferenceCourses',
+    'generatedTimetableCourses',
     'preferenceSubject',
     'preferenceSlot',
     'allSubjectsMode',
