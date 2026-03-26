@@ -379,18 +379,18 @@ export default function CoursesPage() {
     }
 
     return (
-        <div className={`min-h-screen bg-[#ede6c5] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="flex-1 w-full flex flex-col items-center px-4 sm:px-6 py-6">
+        <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+            <div className="flex-1 w-full flex justify-center px-4 sm:px-6 pt-12 pb-6">
                 <div className="w-full max-w-6xl flex flex-col gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[#1f1f1f]">Your Courses</h1>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-black px-2 font-bold">Your Courses</h1>
 
                     {/* Selected Courses Card */}
-                    <div className="bg-white rounded-2xl shadow-[0_12px_28px_rgba(0,0,0,0.06)] border border-[#e6e6e6] overflow-hidden animate-lucid-fade-up-delayed">
-                        <div className="bg-[#b3e3b3] px-6 py-4">
+                    <div className=" w-full bg-[#fcfcfc] rounded-[24px] shadow-sm border border-[#eaeaea] overflow-hidden animate-lucid-fade-up-delayed">
+                        <div className="bg-[#a9d6a9] px-6 py-4">
                             <h2 className="text-2xl font-bold text-[#1f1f1f]">Selected Courses</h2>
                         </div>
 
-                        <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.5fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#ededed] bg-[#fcfcfc] text-[#1f1f1f]">
+                        <div className="grid grid grid-cols-[60px_140px_1.5fr_1fr_120px] border-b border-[#ededed] bg-[#fcfcfc] text-[#1f1f1f]">
                             <div className="px-5 py-3 text-sm font-bold">No</div>
                             <div className="px-5 py-3 text-sm font-bold">Course Code</div>
                             <div className="px-5 py-3 text-sm font-bold">Course Name</div>
@@ -399,7 +399,7 @@ export default function CoursesPage() {
                         </div>
 
                         {visibleFaculties.length === 0 && !(lastRemovedFaculties && lastRemovedFaculties.length > 0) && !deletedRow ? (
-                            <div className="min-h-[340px] flex items-center justify-center px-6 py-12 text-xl text-[#1f1f1f] font-medium">
+                            <div className="min-h-[260px] flex items-center justify-center px-6 py-12 text-xl text-[#1f1f1f] font-medium">
                                 All subjects have been deleted.
                             </div>
                         ) : (
@@ -503,7 +503,7 @@ export default function CoursesPage() {
                             </div>
                         )}
 
-                        <div className="px-6 py-4 flex justify-between border-t border-[#ededed] bg-white">
+                        <div className="px-6 py-4 flex items-center justify-between border-t border-[#ededed] bg-[#fcfcfc]">
                             
                             <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 bg-[#f2e6b5] rounded-xl px-3 py-2 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
@@ -541,21 +541,28 @@ export default function CoursesPage() {
                     </div>
                 </div>
             </div>
+            
 
             {/* Bottom Navigation */}
-            <div className="bg-white border-t border-gray-300 py-4 px-[clamp(16px,2vw,32px)] shadow-lg animate-lucid-fade-up-delayed shrink-0">
-                <div className="flex flex-wrap items-center justify-between max-w-7xl mx-auto gap-3">
-                    <div className="flex items-center gap-3">
+            <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 w-full flex justify-center mt-auto">
+                <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
+                    {/* LEFT - USER BOX */}
+                    <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                         {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
+                            <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
                         ) : (
-                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                                {session?.user?.name?.[0] || "?"}
+                            </div>
                         )}
-                        <span className="text-gray-700 text-sm truncate max-w-[120px]">{session?.user?.name || "Guest"}</span>
+                        <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                            {session?.user?.name || "Guest"}
+                        </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        {[1, 2, 3, 4].map(num => (
+                    {/* CENTER - STEPS BOX */}
+                    <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
+                        {[1, 2, 3, 4].map((num) => (
                             <button
                                 key={num}
                                 onClick={() => {
@@ -564,31 +571,28 @@ export default function CoursesPage() {
                                     if (num === 3) syncAndOpenTimetable();
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 2
-                                    ? 'bg-[#A0C4FF] text-black'
-                                    : 'bg-[#A0C4FF]/40 text-gray-700'
-                                    }`}
+                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                                    num === 2
+                                        ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
+                                        : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                                }`}
                             >
                                 {num === 2 ? '2. Courses' : num}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* RIGHT - ACTION BOX */}
+                    <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                         <button
-                            onClick={() => {
-                                deleteCookie('editingTimetableId');
-                                router.back();
-                            }}
-                            className="px-8 py-2.5 bg-[#f1eacb] border-2 border-[#A0C4FF] rounded-lg font-semibold text-sm hover:bg-[#E8DDB8] text-black transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                            onClick={() => { deleteCookie('editingTimetableId'); router.back(); }}
+                            className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Previous
                         </button>
                         <button
-                            onClick={() => {
-                                syncAndOpenTimetable();
-                            }}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
+                            onClick={syncAndOpenTimetable}
+                            className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Next
                         </button>
