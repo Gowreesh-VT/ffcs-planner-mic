@@ -78,7 +78,7 @@ export default function TimetablePage() {
 
 
         if (!timetableData || timetableData.length === 0) {
-            const savedCoursesRaw = getCookie('preferenceCourses');
+            const savedCoursesRaw = getCookie('generatedTimetableCourses') || getCookie('preferenceCourses');
             if (savedCoursesRaw) {
                 try {
                     setIsGenerating(true);
