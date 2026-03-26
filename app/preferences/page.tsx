@@ -68,7 +68,7 @@ const STEP_LABELS = [
     'Faculty Priority',
 ];
 
-const selectionButtonClass = 'w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5';
+const selectionButtonClass = 'w-full p-3 lg:p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5';
 const selectionButtonSelectedClass = 'bg-white ring-2 ring-blue-500 shadow-md';
 const selectionButtonUnselectedClass = 'bg-white/80 hover:bg-white hover:shadow-sm';
 
@@ -500,39 +500,40 @@ export default function PreferencesPage() {
     const canAddAnotherProfessor = faculties.some(faculty => !selectedFaculties.includes(faculty));
 
     return (
-        <div className={`h-screen bg-[#F5E6D3] font-sans flex flex-col overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            {/* Main Content */}
-            <div className="w-[98%] max-w-[1800px] flex-1 min-h-0 flex flex-col bg-[#FFFBF0] rounded-[32px] p-[clamp(12px,1.5vw,24px)] my-[clamp(8px,1vh,16px)] pb-4 shadow-sm mx-auto">
-                <div className="flex items-center gap-4 pb-4 ml-2 shrink-0">
-                    <h1 className="text-[26px] lg:text-3xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
-                </div>
+        <>
+        <div className={`h-screen bg-[#F5E6D3] font-sans overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+            <div className="h-full px-[clamp(12px,1.5vw,24px)] pt-[clamp(10px,1vh,18px)] pb-[116px]">
+                <div className="w-full max-w-[1800px] h-full mx-auto flex flex-col min-h-0">
+                    <div className="flex items-center gap-4 px-2 pt-[24px] pb-3 shrink-0">
+                        <h1 className="text-[26px] lg:text-3xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
+                    </div>
 
-                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 flex flex-col min-h-0 overflow-hidden px-6 py-6 lg:px-10 lg:py-8 mt-2 animate-lucid-fade-up-delayed">
-                    <div className="flex gap-[clamp(10px,1vw,18px)] mt-2 lg:mt-3 flex-1 min-h-0 min-w-0 overflow-x-auto" style={{ scrollBehavior: 'smooth' }}>
+                    <div className="flex-1 min-h-0 bg-white rounded-[18px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white overflow-hidden px-4 py-4 lg:px-6 lg:py-5 animate-lucid-fade-up-delayed">
+                            <div className="flex items-stretch gap-[clamp(8px,0.9vw,16px)] h-full min-h-0 min-w-0 overflow-hidden" style={{ scrollBehavior: 'smooth' }}>
                         {/* Step Panels */}
                         {[1, 2, 3, 4, 5, 6].map(stepNum => (
                             <div
                                 key={stepNum}
                                 onClick={stepNum === currentStep ? undefined : () => handleStepClick(stepNum)}
-                                className={`rounded-2xl flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
+                                className={`rounded-[16px] flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
   stepNum === currentStep
-    ? 'flex-[2.2] min-w-[320px] max-w-[500px]'
-    : 'flex-[0.6] min-w-[70px]'
+    ? 'flex-[2.8] min-w-[280px] max-w-[470px]'
+    : 'flex-1 min-w-[58px]'
 }`}
                                 style={{ backgroundColor: STEP_COLORS[stepNum - 1] }}
                             >
                             {stepNum === currentStep ? (
-                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-4 lg:px-6 pt-5 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl animate-lucid-panel-in">
+                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-2 lg:px-4 pt-4 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-[16px] animate-lucid-panel-in">
                                     <div 
-                                        className="flex items-center justify-center shrink-0 border-b-[4px] pb-4 mb-3  px-4 lg:mx-[-24px] lg:px-6"
+                                        className="flex items-center justify-center shrink-0 border-b-[4px] pb-3 mb-3 px-2 lg:mx-[-16px] lg:px-4"
                                         style={{ borderBottomColor: STEP_BORDER_COLORS[stepNum - 1] }}
                                     >
-                                        <h2 className="text-xl lg:text-2xl font-bold text-black m-0 leading-none">
+                                        <h2 className="text-[16px] lg:text-[28px] font-bold text-black m-0 leading-none text-center">
                                             {stepNum}. {STEP_LABELS[stepNum - 1]}
                                         </h2>
                                     </div>
 
-                                    <div className="flex-1 bg-transparent p-2 lg:p-4 overflow-y-auto custom-scrollbar flex flex-col">
+                                    <div className="flex-1 bg-transparent p-1 lg:p-3 overflow-y-auto custom-scrollbar flex flex-col">
                                         {selectionError && (
                                             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                                                 {selectionError}
@@ -621,7 +622,7 @@ export default function PreferencesPage() {
                                                     <button
                                                         key={slot}
                                                         onClick={() => handleSlotSelect(slot)}
-                                                        className={`w-full p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5 ${selectedSlots.includes(slot)
+                                                        className={`w-full p-3 lg:p-4 rounded-lg text-left font-semibold transition-all duration-200 hover:-translate-y-0.5 ${selectedSlots.includes(slot)
                                                             ? 'bg-white ring-2 ring-blue-500 shadow-md'
                                                             : 'bg-white/80 hover:bg-white hover:shadow-sm'
                                                             }`}
@@ -714,11 +715,11 @@ export default function PreferencesPage() {
                                     </div>
 
                                     {/* Navigation arrows within active panel */}
-                                     <div className="flex justify-between mt-auto pt-4 shrink-0 px-2 pb-2">
+                                     <div className="flex justify-between mt-auto pt-3 shrink-0 px-1 pb-1">
                                          <button
                                              onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
                                              disabled={currentStep === 1}
-                                             className={`w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 ${currentStep === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}`}
+                                             className={`w-10 h-10 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 ${currentStep === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}`}
                                          >
                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                          </button>
@@ -747,7 +748,7 @@ export default function PreferencesPage() {
                                              <button
                                                  onClick={(e) => { e.stopPropagation(); handleNext(); }}
                                                  disabled={!canProceed()}
-                                                 className={`w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 cursor-pointer ${!canProceed() ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md'}`}
+                                                 className={`w-10 h-10 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 cursor-pointer ${!canProceed() ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md'}`}
                                              >
                                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                                              </button>
@@ -755,10 +756,10 @@ export default function PreferencesPage() {
                                      </div>
                                  </div>
                              ) : (
-                                 <div className="h-full flex flex-col items-center py-6 lg:py-8">
-                                     <span className="text-2xl font-bold text-black mb-4">{stepNum}</span>
+                                 <div className="h-full flex flex-col items-center justify-center px-1 lg:px-2 py-5 lg:py-6">
+                                     <span className="text-[1.9rem] font-bold text-black mb-3">{stepNum}</span>
                                      <div
-                                         className="text-lg lg:text-xl font-bold tracking-wide flex-1 flex items-center justify-center whitespace-nowrap"
+                                         className="text-base lg:text-[18px] font-bold tracking-wide flex-1 flex items-center justify-center whitespace-nowrap"
                                         style={{
                                             writingMode: 'vertical-rl',
                                             textOrientation: 'mixed',
@@ -771,12 +772,14 @@ export default function PreferencesPage() {
                             )}
                         </div>
                     ))}
+                    </div>
                 </div>
             </div>
         </div>
+        </div>
 
         {/* Bottom Navigation */}
-        <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 w-full flex justify-center mt-auto">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
             <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
                 {/* LEFT - USER BOX */}
                 <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
@@ -871,6 +874,6 @@ export default function PreferencesPage() {
                     animation: lucidPanelIn 280ms ease-out;
                 }
             `}</style>
-        </div >
+        </>
     );
 }

@@ -180,6 +180,15 @@ export default function SavedPage() {
         setTimeout(() => setToast(''), 3000);
     }, []);
 
+    const handlePrevious = () => {
+        if (viewMode === 'view') {
+            setViewMode('list');
+            setSelectedTT(null);
+            return;
+        }
+        router.push('/saved');
+    };
+
     /* ── Handlers ── */
     function handleEdit(tt: TimetableEntry) {
         if (tt._id.startsWith('mock')) return;
@@ -295,7 +304,7 @@ export default function SavedPage() {
                 <>
                     {/* Main content */}
                     <div className="main-content">
-                        <h1 className="page-title" style={{ marginBottom: '1rem', marginLeft: '2rem' }}>View Your Saved Timetable</h1>
+                        <h1 className="page-title">View Your Saved Timetable</h1>
 
                         <div className="cards-outer">
                             {loading ? (
@@ -386,8 +395,8 @@ export default function SavedPage() {
                         </div>
 
                         <div className="nav-btns">
-                            <button onClick={() => router.push('/timetable')} className="btn-prev">previous</button>
-                            <button disabled className="btn-next">next</button>
+                            <button onClick={handlePrevious} className="btn-prev">Previous</button>
+                            <button disabled className="btn-next">Next</button>
                         </div>
                     </div>
                 </>
@@ -816,8 +825,8 @@ function TimetableDetailView({
                     </div>
                 </div>
                 <div className="nav-btns">
-                    <button onClick={() => router.push('/timetable')} className="btn-prev">previous</button>
-                    <button disabled className="btn-next">next</button>
+                    <button onClick={onBack} className="btn-prev">Previous</button>
+                    <button disabled className="btn-next">Next</button>
                 </div>
             </div>
         </div>
