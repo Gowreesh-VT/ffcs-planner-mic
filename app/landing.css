@@ -8,8 +8,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 20px;
-    gap: 40px;
+    padding: 40px 20px 20px 20px;
+    gap: 60px;
     overflow-x: hidden;
     width: 100%;
     box-sizing: border-box;
@@ -88,7 +88,7 @@ body {
 /* Hero Section */
 .hero-section {
     display: flex;
-    padding: clamp(24px, 4vw, 60px);
+    padding: clamp(115px, 14vh, 200px) clamp(24px, 4vw, 64px);
     justify-content: space-between;
     align-items: center;
     gap: 40px;
@@ -97,11 +97,13 @@ body {
 
 .hero-text {
     flex: 1;
+    margin-left: 60px;
 }
 
 .hero-text h1 {
     font-size: clamp(36px, 5vw, 64px);
-    line-height: 1.05;
+    line-height: 0.92;
+    letter-spacing: -0.03em;
     margin: 0 0 24px 0;
     font-weight: 800;
     color: #000;
@@ -110,9 +112,10 @@ body {
 .hero-text p {
     font-size: 16px;
     color: #444;
-    line-height: 1.5;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
     margin-bottom: 32px;
-    max-width: 380px;
+    max-width: 480px;
 }
 
 .hero-buttons {
@@ -124,7 +127,7 @@ body {
     background-color: #aecbfa;
     color: #000;
     border: none;
-    padding: 14px 28px;
+    padding: 14px 40px;
     border-radius: 8px;
     font-weight: 600;
     font-size: 14px;
@@ -140,7 +143,7 @@ body {
     background-color: transparent;
     color: #000;
     border: 2px solid #aecbfa;
-    padding: 12px 28px;
+    padding: 12px 40px;
     border-radius: 8px;
     font-weight: 600;
     font-size: 14px;
@@ -152,26 +155,9 @@ body {
     background-color: #f5f8ff;
 }
 
-/* Calendar tail fade animation */
-.cal-fade-animation .cal-box {
+/* Individual tile fade animation */
+.cal-box.animating {
     animation: fadeOutInTail 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-/* Staggered animation delays for grid items to create a cool ripple effect */
-.cal-fade-animation .cal-box:nth-child(even) {
-    animation-delay: 0.1s;
-}
-
-.cal-fade-animation .cal-box:nth-child(3n) {
-    animation-delay: 0.2s;
-}
-
-.cal-fade-animation .cal-box:nth-child(5n) {
-    animation-delay: 0.3s;
-}
-
-.cal-fade-animation .cal-box:nth-child(7n) {
-    animation-delay: 0.4s;
 }
 
 @keyframes fadeOutInTail {
@@ -200,8 +186,8 @@ body {
 
 /* Calendar Graphic - Pure CSS fallback based on image */
 .calendar-graphic {
-    width: min(420px, 100%);
-    height: 260px;
+    width: min(540px, 100%);
+    height: 280px;
     background: white;
     position: relative;
     display: flex;
@@ -241,305 +227,191 @@ body {
 
 .cal-box {
     border-radius: 4px;
+    cursor: pointer;
 }
 
 /* Middle Section */
 .middle-section {
     display: flex;
-    max-width: 1340px;
+    max-width: 1100px;
     width: 100%;
     gap: 0;
     flex-wrap: wrap;
-    align-items: stretch;
-    position: relative;
-    margin-top: 8px;
-}
-
-.how-it-works-card,
-.faq-card {
     background: #ffffff;
     border-radius: 24px;
-    padding: 40px 36px 40px;
-    min-height: 620px;
-    min-width: 0;
-    box-shadow: 0 4px 24px rgba(137, 137, 137, 0.14);
-    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
 }
 
 .how-it-works-card {
-    flex: 1.38 1 720px;
-    margin-right: 20px;
+    padding: clamp(20px, 3vw, 40px);
+    flex: 1.3 1 400px;
+    min-width: 0;
+    border-right: 2px dashed #e5e7eb;
 }
 
 .faq-card {
-    flex: 1 1 520px;
-    margin-left: 20px;
+    padding: clamp(20px, 3vw, 40px);
+    flex: 0.9 1 400px;
+    min-width: 0;
 }
 
-.middle-section::after {
-    content: "";
-    position: absolute;
-    top: 54px;
-    bottom: 54px;
-    left: calc(58% + 10px);
-    border-left: 1px dashed #d2d2d2;
-    pointer-events: none;
+@media (max-width: 890px) {
+    .how-it-works-card {
+        border-right: none;
+        border-bottom: 2px dashed #e5e7eb;
+    }
 }
 
 .how-it-works-card h2,
 .faq-card h2 {
-    font-size: 32px;
+    font-size: 20px;
     font-weight: 700;
     text-align: center;
-    line-height: 1.2;
-    color: #000;
-    margin: 0 0 28px 0;
+    margin: 0 0 32px 0;
 }
 
 .faq-card h2 {
     text-align: left;
-    font-size: 24px;
-    margin-bottom: 26px;
 }
 
 /* Video Placeholer */
 .video-box {
-    width: min(100%, 520px);
-    height: 235px;
-    margin: 0 auto 36px;
+    border: 4px solid #333;
+    border-radius: 12px;
+    height: 200px;
+    margin-bottom: 32px;
     position: relative;
     overflow: hidden;
-    background: #f8f8f8;
+    background: #fafafa;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 5px solid #000000;
-    border-radius: 8px;
-    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-}
-
-.video-box::after {
-    content: "";
-    position: absolute;
-    inset: 5px;
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(1.6px);
-    border-radius: 4px;
 }
 
 .video-box img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    opacity: 0.95;
+    object-fit: contain;
+    transform: rotate(+90deg) scale(2.45);
+    transform-origin: center;
+    opacity: 1;
 }
 
 .play-icon {
     position: absolute;
-    width: 93px;
-    height: 93px;
-    background: rgba(202, 202, 202, 0.72);
+    width: 48px;
+    height: 48px;
+    background: #d9d9d9;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 1;
 }
 
 .play-icon::before {
     content: '';
-    border-left: 27px solid #454545;
-    border-top: 18px solid transparent;
-    border-bottom: 18px solid transparent;
-    margin-left: 8px;
+    border-left: 14px solid #333;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    margin-left: 4px;
 }
 
 .steps-list {
     display: flex;
     flex-direction: column;
-    gap: 28px;
-    width: 100%;
-    max-width: 540px;
-    margin: 0 auto;
+    gap: 24px;
 }
 
 .step-item {
     display: flex;
-    gap: 22px;
-    align-items: center;
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .step-number {
-    width: 95px;
-    height: 95px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    border: 2px solid #f9eeaa;
-    box-shadow: 0 4px 0 #f9eeaa;
-    background: #ffffff;
+    border: 2px solid #fde047;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 32px;
+    font-size: 20px;
     font-weight: 700;
     flex-shrink: 0;
 }
 
 .step-text {
-    font-size: 16px;
-    line-height: 1.25;
-    color: #000000;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #555;
     margin: 0;
-    max-width: 430px;
+    padding-top: 4px;
 }
 
 /* FAQ */
 .faq-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 .faq-item {
-    border: 2px solid #b8edc0;
-    border-radius: 16px;
-    padding: 18px 18px 16px;
-    background: #ffffff;
-    box-shadow: 0 4px 2px rgba(184, 237, 192, 0.25);
-    transition: box-shadow 0.25s ease, transform 0.25s ease;
-}
-
-.faq-item:hover {
-    transform: translateY(-1px);
-}
-
-.faq-item-open {
-    padding-bottom: 22px;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 16px 20px;
 }
 
 .faq-question {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    font-weight: 700;
-    font-size: 20px;
-    line-height: 1.2;
-    color: #000000;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
 }
 
 .faq-icon {
-    font-size: 34px;
+    font-size: 18px;
     color: #333;
     transition: transform 0.2s;
-    line-height: 0.9;
-    flex-shrink: 0;
 }
 
 .faq-answer {
-    margin-top: 16px;
-    max-width: 381px;
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.2;
-    color: #595959;
-}
-
-@media (max-width: 1180px) {
-    .middle-section {
-        gap: 24px;
-    }
-
-    .middle-section::after {
-        display: none;
-    }
-
-    .how-it-works-card,
-    .faq-card {
-        flex: 1 1 100%;
-        margin: 0;
-        min-height: auto;
-    }
-}
-
-@media (max-width: 768px) {
-    .how-it-works-card,
-    .faq-card {
-        padding: 28px 22px;
-    }
-
-    .how-it-works-card h2 {
-        font-size: 28px;
-    }
-
-    .faq-card h2 {
-        font-size: 22px;
-    }
-
-    .video-box {
-        height: 190px;
-    }
-
-    .play-icon {
-        width: 74px;
-        height: 74px;
-    }
-
-    .play-icon::before {
-        border-left-width: 22px;
-        border-top-width: 14px;
-        border-bottom-width: 14px;
-        margin-left: 6px;
-    }
-
-    .step-item {
-        align-items: flex-start;
-    }
-
-    .step-number {
-        width: 72px;
-        height: 72px;
-        font-size: 28px;
-    }
-
-    .step-text {
-        font-size: 14px;
-    }
-
-    .faq-question {
-        font-size: 16px;
-    }
-
-    .faq-answer {
-        font-size: 16px;
-        max-width: none;
-    }
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #666;
 }
 
 /* Footer Container */
 .footer-container {
-    width: 100%;
-    max-width: 1100px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     position: relative;
-    margin-top: 10px;
 }
 
 .footer-top {
     background-color: #5b5b5b;
-    height: 60px;
-    border-radius: 24px 24px 0 0;
+    height: 68px;
+    border-radius: 0;
     position: relative;
 }
 
 .binding-rings {
     position: absolute;
-    top: -20px;
-    left: 0;
-    right: 0;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1100px;
     display: flex;
     justify-content: space-around;
     padding: 0 60px;
+    box-sizing: border-box;
 }
 
 .ring {
@@ -551,16 +423,24 @@ body {
 
 .footer-main {
     background-color: #f3f4f6;
-    padding: 24px;
-    border-radius: 0 0 24px 24px;
-    border: 1px solid #e5e7eb;
+    padding: 14px 8px 12px 8px;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: center;
+}
+
+.footer-content-wrapper {
+    width: 100%;
+    max-width: 1100px;
 }
 
 .footer-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     grid-template-rows: auto;
-    gap: 16px;
+    gap: 6px;
 }
 
 @media (min-width: 900px) {
@@ -568,23 +448,28 @@ body {
         grid-template-columns: minmax(250px, 1fr) minmax(350px, 1.6fr) minmax(200px, 1fr);
         grid-template-rows: 1fr auto;
     }
+
     .f-about {
         grid-column: 1 / 2;
-        grid-row: 1 / 2;
+        grid-row: 1 / 3;
     }
+
     .f-buttons {
         grid-column: 2 / 3;
         grid-row: 1 / 2;
         grid-template-columns: 1fr 1fr;
     }
+
     .f-graphics {
         grid-column: 3 / 4;
         grid-row: 1 / 2;
     }
+
     .f-credits {
-        grid-column: 1 / 3;
+        grid-column: 2 / 3;
         grid-row: 2 / 3;
     }
+
     .f-updates {
         grid-column: 3 / 4;
         grid-row: 2 / 3;
@@ -593,50 +478,57 @@ body {
 
 .f-block {
     background: #ffffff;
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid #f0f0f0;
-    padding: 24px;
+    padding: 10px 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
 }
 
+
 .f-about {
-    grid-column: auto;
-    grid-row: auto;
+    padding: 12px 16px;
+    /* Padding for text */
+    margin-left: 8px;
+    /* Very little margin from left wall */
+    height: 100%;
+    /* Complete the box fully */
+    box-sizing: border-box;
 }
 
 .f-about h3 {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 900;
-    margin: 0 0 16px 0;
+    margin: 0 0 8px 0;
 }
 
 .f-about p {
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.45;
     color: #444;
     margin: 0;
+    font-weight: 500;
 }
 
 .f-buttons {
-    grid-column: auto;
-    grid-row: auto;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    padding: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
 }
 
 .f-btn {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px;
-    padding: 12px 16px;
-    border-radius: 12px;
+    padding: 14px 18px;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 14px;
     border: none;
     cursor: pointer;
     text-align: left;
+    line-height: 1.2;
 }
 
 .f-btn-gen {
@@ -656,117 +548,114 @@ body {
 }
 
 .f-btn img {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     object-fit: contain;
 }
 
+.f-btn span {
+    flex: 0 1 auto;
+    text-align: left;
+    display: block;
+    font-size: 15px;
+    line-height: 1.1;
+}
+
 .f-graphics {
-    grid-column: auto;
-    grid-row: auto;
     position: relative;
     overflow: hidden;
-    padding: 0;
-    min-height: 160px;
+    padding: 12px;
+    min-height: 184px;
+    margin: 0 8px 4px 8px;
 }
 
 .floating-tile {
     position: absolute;
-    width: 32px;
-    height: 32px;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 44px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: 800;
-    font-size: 16px;
-    border-radius: 6px;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1;
+    letter-spacing: 0.2px;
+    border-radius: 7px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+        0 3px 0 rgba(0, 0, 0, 0.24),
+        0 7px 10px rgba(0, 0, 0, 0.08);
     color: #000;
-    animation: floatAndVibrate 3s ease-in-out infinite;
+    will-change: transform;
+    transform-origin: center;
+    backface-visibility: hidden;
+    user-select: none;
+    pointer-events: none;
 }
 
-.floating-tile:nth-child(1) {
-    animation-duration: 3.2s;
-    animation-delay: 0.1s;
+.floating-tile::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: -2px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: rgba(0, 0, 0, 0.14);
+    opacity: 0.5;
 }
 
-.floating-tile:nth-child(2) {
-    animation-duration: 4.1s;
-    animation-delay: 0.5s;
-}
-
-.floating-tile:nth-child(3) {
-    animation-duration: 3.8s;
-    animation-delay: 0.8s;
-}
-
-.floating-tile:nth-child(4) {
-    animation-duration: 4.5s;
-    animation-delay: 0.2s;
-}
-
-.floating-tile:nth-child(5) {
-    animation-duration: 3.5s;
-    animation-delay: 0.6s;
-}
-
-.floating-tile:nth-child(6) {
-    animation-duration: 4.2s;
-    animation-delay: 0.4s;
-}
-
-.floating-tile:nth-child(7) {
-    animation-duration: 3.9s;
-    animation-delay: 0.9s;
-}
-
-@keyframes floatAndVibrate {
-
-    0%,
-    100% {
-        translate: 0 0;
-    }
-
-    25% {
-        translate: -6px -12px;
-    }
-
-    50% {
-        translate: 4px -20px;
-    }
-
-    75% {
-        translate: 6px -8px;
-    }
+.footer-bottom-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    margin-top: 8px;
+    padding: 8px 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.01);
 }
 
 .f-credits {
-    grid-column: auto;
-    grid-row: auto;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 0px 10px;
+    /* further reduced top/bottom padding */
+    /* reduced top/bottom padding */
+    margin-right: 8px;
+    /* very little margin from right wall */
+    height: 100%;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 16px;
-    white-space: nowrap;
 }
 
 .f-updates {
-    grid-column: auto;
-    grid-row: auto;
     display: flex;
-    padding: 8px;
     align-items: center;
+    justify-content: center;
+    padding: 8px;
+    margin: 0 8px 4px 8px;
 }
 
 .f-updates input {
-    flex: 1;
     border: none;
     outline: none;
     background: transparent;
     padding: 0 12px;
     font-size: 13px;
+    width: 180px;
 }
 
 .f-updates input::placeholder {
@@ -778,9 +667,75 @@ body {
     border: none;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+@media (max-width: 768px) {
+    .footer-bottom-bar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .f-updates {
+        position: static;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 1024px) {
+    .f-btn {
+        font-size: 14px;
+    }
+
+    .f-btn span {
+        font-size: 15px;
+    }
+
+    .f-credits {
+        font-size: 16px;
+    }
+
+    .f-updates input {
+        font-size: 13px;
+    }
+}
+
+@media (min-width: 1100px) and (max-width: 1550px) {
+    .floating-tile {
+        width: 42px;
+        height: 42px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .f-btn {
+        font-size: 16px;
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .f-btn img {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
+    }
+
+    .f-btn span {
+        font-size: 15px;
+    }
+
+    .floating-tile {
+        width: 33px;
+        height: 33px;
+        font-size: 12px;
+        border-radius: 7px;
+    }
 }
