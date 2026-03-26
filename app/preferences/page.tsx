@@ -502,26 +502,29 @@ export default function PreferencesPage() {
     return (
         <div className={`h-screen bg-[#F5E6D3] font-sans flex flex-col overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {/* Main Content */}
-            <div className="flex-1 p-[clamp(16px,2vw,32px)] pb-0 flex flex-col min-h-0 overflow-hidden">
-                <div className="flex items-center gap-4 mb-4 shrink-0 px-2 lg:px-4">
-                    <h1 className="text-3xl lg:text-4xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
+            <div className="w-[98%] max-w-[1800px] flex-1 min-h-0 flex flex-col bg-[#FFFBF0] rounded-[32px] p-[clamp(12px,1.5vw,24px)] my-[clamp(8px,1vh,16px)] pb-4 shadow-sm mx-auto">
+                <div className="flex items-center gap-4 pb-4 ml-2 shrink-0">
+                    <h1 className="text-[26px] lg:text-3xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
                 </div>
 
-                <div className="bg-[#fcfcfc] rounded-t-[24px] shadow-sm flex-1 flex flex-col min-h-0 overflow-hidden p-6 lg:p-8 animate-lucid-fade-up-delayed">
-                    <div className="flex gap-[clamp(8px,1vw,16px)] flex-1 min-h-0 min-w-0 overflow-hidden">
+                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 flex flex-col min-h-0 overflow-hidden px-6 py-6 lg:px-10 lg:py-8 mt-2 animate-lucid-fade-up-delayed">
+                    <div className="flex gap-[clamp(10px,1vw,18px)] mt-2 lg:mt-3 flex-1 min-h-0 min-w-0 overflow-x-auto" style={{ scrollBehavior: 'smooth' }}>
                         {/* Step Panels */}
                         {[1, 2, 3, 4, 5, 6].map(stepNum => (
                             <div
                                 key={stepNum}
                                 onClick={stepNum === currentStep ? undefined : () => handleStepClick(stepNum)}
-                                className={`rounded-xl flex items-center justify-center transition-all duration-300 overflow-hidden ${stepNum === currentStep ? 'flex-[2.8]' : 'flex-1'
-                                    } ${stepNum === currentStep ? 'shadow-lg cursor-default' : 'cursor-pointer hover:opacity-90'}`}
+                                className={`rounded-2xl flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
+  stepNum === currentStep
+    ? 'flex-[2.2] min-w-[320px] max-w-[500px]'
+    : 'flex-[0.6] min-w-[70px]'
+}`}
                                 style={{ backgroundColor: STEP_COLORS[stepNum - 1] }}
                             >
                             {stepNum === currentStep ? (
-                                <div key={`active-step-${currentStep}`} className="w-full h-full px-4 lg:px-6 pb-4 pt-6 flex flex-col animate-lucid-panel-in">
+                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-4 lg:px-6 pt-5 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl animate-lucid-panel-in">
                                     <div 
-                                        className="flex items-center justify-center shrink-0 border-b-[3px] pb-4 mb-2 mx-2"
+                                        className="flex items-center justify-center shrink-0 border-b-[4px] pb-4 mb-3  px-4 lg:mx-[-24px] lg:px-6"
                                         style={{ borderBottomColor: STEP_BORDER_COLORS[stepNum - 1] }}
                                     >
                                         <h2 className="text-xl lg:text-2xl font-bold text-black m-0 leading-none">
@@ -714,8 +717,8 @@ export default function PreferencesPage() {
                                      <div className="flex justify-between mt-auto pt-4 shrink-0 px-2 pb-2">
                                          <button
                                              onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-                                             style={{ visibility: currentStep === 1 ? 'hidden' : 'visible' }}
-                                             className="w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                                             disabled={currentStep === 1}
+                                             className={`w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 ${currentStep === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}`}
                                          >
                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                          </button>
@@ -773,79 +776,74 @@ export default function PreferencesPage() {
         </div>
 
         {/* Bottom Navigation */}
-            <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 max-w-7xl mx-auto w-full">
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 w-full">
-                    {/* Left: User Avatar */}
-                    <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 justify-self-start mr-auto">
-                        {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg" referrerPolicy="no-referrer" />
-                        ) : (
-                            <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm">
-                                {session?.user?.name?.[0] || "?"}
-                            </div>
-                        )}
-                        <span className="text-gray-800 text-sm font-bold truncate max-w-[140px] pr-2">{session?.user?.name || "Guest"}</span>
-                    </div>
+        <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 w-full flex justify-center mt-auto">
+            <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
+                {/* LEFT - USER BOX */}
+                <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                    {session?.user?.image ? (
+                        <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
+                    ) : (
+                        <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                            {session?.user?.name?.[0] || "?"}
+                        </div>
+                    )}
+                    <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                        {session?.user?.name || "Guest"}
+                    </span>
+                </div>
 
-                    {/* Center: Step Pills */}
-                    <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 justify-self-center">
-                        {[1, 2, 3, 4].map(num => (
-                            <button
-                                key={num}
-                                onClick={() => {
-                                    saveCurrentSelection();
-                                    if (num === 1) router.push('/preferences');
-                                    if (num === 2) router.push('/courses');
-                                    if (num === 3) router.push('/timetable');
-                                    if (num === 4) router.push('/saved');
-                                }}
-                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${num === 1
+                {/* CENTER - STEPS BOX */}
+                <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
+                    {[1, 2, 3, 4].map((num) => (
+                        <button
+                            key={num}
+                            onClick={() => {
+                                if (num === 1) router.push('/preferences');
+                                if (num === 2) router.push('/courses');
+                                if (num === 3) router.push('/timetable');
+                                if (num === 4) router.push('/saved');
+                            }}
+                            className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                                num === 1
                                     ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
                                     : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
-                                    }`}
-                            >
-                                {num === 1 ? '1. Preferences' : num}
-                            </button>
-                        ))}
-                    </div>
+                            }`}
+                        >
+                            {num === 1 ? '1. Preferences' : num}
+                        </button>
+                    ))}
+                </div>
 
-                    {/* Right: Next / Prev */}
-                    <div className="flex gap-3 justify-self-end ml-auto">
-                        <button
-                            onClick={() => {
-                                saveCurrentSelection();
-                                router.push('/');
-                            }}
-                            className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
-                        >
-                            Previous
-                        </button>
-                        <button
-                            onClick={() => {
-                                saveCurrentSelection();
-                                router.push('/courses');
-                            }}
-                            className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
-                        >
-                            Next
-                        </button>
-                    </div>
+                {/* RIGHT - ACTION BOX */}
+                <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
+                    <button
+                        onClick={() => setCookie('editingTimetableId', '', -1)}
+                        disabled={currentStep === 1}
+                        style={{ opacity: currentStep === 1 ? 0.4 : 1, cursor: currentStep === 1 ? 'not-allowed' : 'pointer' }}
+                        className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
+        </div>
 
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 10px;
+                    width: 8px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.4);
-                    border-radius: 6px;
+                    background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.9);
-                    border: 2px solid transparent;
-                    background-clip: padding-box;
-                    border-radius: 6px;
+                    background: rgba(255, 255, 255, 0.5);
+                    border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background-color: #ffffff;
