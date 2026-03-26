@@ -361,7 +361,8 @@ export default function CoursesPage() {
     };
 
     const syncAndOpenTimetable = () => {
-        const updatedCourses = buildPreferenceCoursesFromRows(faculties);
+        const rowsForGeneration = allSubjectsMode ? faculties : visibleFaculties;
+        const updatedCourses = buildPreferenceCoursesFromRows(rowsForGeneration);
         setCookie('preferenceCourses', JSON.stringify(updatedCourses));
 
         const { result } = generateTT(updatedCourses);

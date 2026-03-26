@@ -259,8 +259,7 @@ export default function LandingPage() {
             ].map((faq, index) => (
               <div
                 key={index}
-                className="faq-item"
-                style={activeFaq === index ? { background: 'transparent', transition: 'background 0.3s ease' } : { cursor: 'pointer', transition: 'background 0.3s ease' }}
+                className={`faq-item ${activeFaq === index ? 'faq-item-open' : ''}`}
               >
                 <div className="faq-question" onClick={() => setActiveFaq(activeFaq === index ? null : index)}>
                   <span>{faq.q.split('\n').map((line, i) => <React.Fragment key={i}>{line}{i === 0 && faq.q.includes('\n') ? <br /> : null}</React.Fragment>)}</span>
