@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { fullCourseData } from '@/lib/type';
 import { getCourseType } from '@/lib/course_codes_map';
 import { clashMap } from '@/lib/slots';
+import { generateTT } from '@/lib/utils';
+import { useTimetable } from '@/lib/TimeTableContext';
 
 type FacultyEntry = {
     uid: string;
@@ -146,6 +148,7 @@ const findClashes = (faculties: FacultyEntry[]): Set<string> => {
 export default function CoursesPage() {
     const router = useRouter();
     const { data: session } = useSession();
+    const { setTimetableData } = useTimetable();
 
     const [allSubjectsMode, setAllSubjectsMode] = useState(false);
     const [faculties, setFaculties] = useState<FacultyEntry[]>([]);
@@ -155,8 +158,21 @@ export default function CoursesPage() {
     const [rowEffects, setRowEffects] = useState<Record<string, string>>({});
     const [isReordering, setIsReordering] = useState(false);
     const [clashingUids, setClashingUids] = useState<Set<string>>(new Set());
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
 
     const [deletedRow, setDeletedRow] = useState<{ faculty: FacultyEntry; index: number } | null>(null);
+
+    const visibleFaculties = useMemo(() => {
+        if (allSubjectsMode) return faculties;
+        const kept: FacultyEntry[] = [];
+        faculties.forEach((faculty) => {
+            const clashesWithKept = kept.some((existing) => doSlotsClash(existing.slot, faculty.slot));
+            if (!clashesWithKept) {
+                kept.push(faculty);
+            }
+        });
+        return kept;
+    }, [faculties, allSubjectsMode]);
 
     useEffect(() => {
         try {
@@ -223,10 +239,13 @@ export default function CoursesPage() {
 
         const updatedCourses = buildPreferenceCoursesFromRows(faculties);
         setCookie('preferenceCourses', JSON.stringify(updatedCourses));
-
-        // Detect clashes
-        setClashingUids(findClashes(faculties));
     }, [faculties, loaded]);
+
+    useEffect(() => {
+        if (!loaded) return;
+        // Detect clashes only among visible rows (when prioritizing, clashes should vanish)
+        setClashingUids(findClashes(visibleFaculties));
+    }, [visibleFaculties, loaded]);
 
     useEffect(() => {
         if (!loaded) return;
@@ -341,6 +360,16 @@ export default function CoursesPage() {
         setLastRemovedFaculties(null);
     };
 
+    const syncAndOpenTimetable = () => {
+        const rowsForGeneration = allSubjectsMode ? faculties : visibleFaculties;
+        const updatedCourses = buildPreferenceCoursesFromRows(rowsForGeneration);
+        setCookie('generatedTimetableCourses', JSON.stringify(updatedCourses));
+
+        const { result } = generateTT(updatedCourses);
+        setTimetableData(result);
+        router.push('/timetable');
+    };
+
     if (!loaded) {
         return (
             <div className="min-h-screen bg-[#F5E6D3] font-sans flex items-center justify-center">
@@ -351,206 +380,223 @@ export default function CoursesPage() {
 
     return (
         <div className={`min-h-screen bg-[#F5E6D3] font-sans flex flex-col transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="flex-1 p-[clamp(16px,2vw,32px)] overflow-auto">
+            <div className="flex-1 w-full flex justify-center px-4 sm:px-6 pt-12 pb-6">
+                <div className="w-full max-w-6xl flex flex-col gap-4">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-black px-2 font-bold">Your Courses</h1>
 
-
-                {clashingUids.size > 0 && (
-                    <div className="bg-red-100 border-2 border-red-400 rounded-lg px-6 py-4 mb-6 flex items-center gap-3 animate-lucid-fade-up">
-                        <svg className="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div>
-                            <h3 className="text-red-800 font-bold text-lg">Slot Clash Detected!</h3>
-                            <p className="text-red-700 text-sm">Some courses have overlapping time slots. Courses with clashes are highlighted in red.</p>
+                    {/* Selected Courses Card */}
+                    <div className=" w-full bg-[#fcfcfc] rounded-[24px] shadow-sm border border-[#eaeaea] overflow-hidden animate-lucid-fade-up-delayed">
+                        <div className="bg-[#a9d6a9] px-6 py-4">
+                            <h2 className="text-2xl font-bold text-[#1f1f1f]">Selected Courses</h2>
                         </div>
-                    </div>
-                )}
 
-                {/* ── Selected Courses Card ── */}
-                <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-4 animate-lucid-fade-up-delayed">
-                    {/* Green header */}
-                    <div className="bg-[#c6f6c6] px-6 py-4">
-                        <h2 className="text-2xl font-bold text-black">Selected Courses</h2>
-                    </div>
+                        <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#ededed] bg-[#fcfcfc] text-[#1f1f1f]">
+                            <div className="px-5 py-3 text-sm font-bold">No</div>
+                            <div className="px-5 py-3 text-sm font-bold">Course Code</div>
+                            <div className="px-5 py-3 text-sm font-bold">Course Name</div>
+                            <div className="px-5 py-3 text-sm font-bold">Faculty Name</div>
+                            <div className="px-5 py-3 text-sm font-bold">Slot</div>
+                            <div className="px-5 py-3 text-sm font-bold text-right">Actions</div>
+                        </div>
 
-                    {/* Table header */}
-                    <div className="grid grid-cols-[40px_minmax(80px,1fr)_minmax(100px,2fr)_minmax(60px,1fr)_minmax(80px,1fr)_minmax(80px,100px)] border-b border-gray-200 bg-white">
-                        <div className="px-4 py-3 text-sm font-bold text-black">No</div>
-                        <div className="px-4 py-3 text-sm font-bold text-black">Course Code</div>
-                        <div className="px-4 py-3 text-sm font-bold text-black">Course Name</div>
-                        <div className="px-4 py-3 text-sm font-bold text-black">Slot</div>
-                        <div className="px-4 py-3 text-sm font-bold text-black">Faculty</div>
-                        <div className="px-4 py-3 text-sm font-bold text-black"></div>
-                    </div>
-
-                    {/* Rows */}
-                    {faculties.length === 0 && !lastRemovedFaculties ? (
-                        <div className="px-6 py-10 text-center text-gray-400 text-sm">No courses selected yet</div>
-                    ) : (
-                        <div>
-                            {faculties.map((faculty, index) => {
-                                const hasClash = clashingUids.has(faculty.uid);
-                                const isDusting = rowEffects[faculty.uid] === 'animate-dust-out';
-                                // Split combined course names and slots (both/lab types use __ separator)
-                                const nameParts = faculty.courseName.split('__');
-                                const slotParts = faculty.slot.split('__');
-                                return (
-                                    <div key={faculty.uid}>
-                                        <div
-                                            className={`grid grid-cols-[40px_minmax(80px,1fr)_minmax(100px,2fr)_minmax(60px,1fr)_minmax(80px,1fr)_minmax(80px,100px)] border-b border-gray-100 items-center transition-colors ${isDusting ? 'pointer-events-none' : ''
-                                                } ${hasClash ? 'bg-red-50' : 'bg-white hover:bg-gray-50'
-                                                } ${rowEffects[faculty.uid] || ''}`}
-                                        >
-                                            <div className={`px-4 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>{faculty.no}</div>
-                                            <div className={`px-4 py-4 text-sm font-bold font-mono ${hasClash ? 'text-red-600' : 'text-gray-900'}`}>{faculty.courseCode}</div>
-                                            <div className={`px-4 py-4 text-sm ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>
-                                                {nameParts.map((n, i) => <div key={i}>{n}</div>)}
-                                            </div>
-                                            <div className={`px-4 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-gray-800'}`}>
-                                                {slotParts.map((s, i) => <div key={i}>{s}</div>)}
-                                            </div>
-                                            <div className={`px-4 py-4 text-sm ${hasClash ? 'text-red-600' : 'text-gray-600'}`}>{faculty.facultyName}</div>
-                                            <div className="px-4 py-4 flex items-center gap-1">
-                                                {/* Up button */}
-                                                <button
-                                                    onClick={() => handleMoveUp(index)}
-                                                    disabled={index === 0 || isDusting || isReordering}
-                                                    title="Move up"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === 0 || isDusting || isReordering
-                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
-                                                        }`}
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6" /></svg>
-                                                </button>
-                                                {/* Down button */}
-                                                <button
-                                                    onClick={() => handleMoveDown(index)}
-                                                    disabled={index === faculties.length - 1 || isDusting || isReordering}
-                                                    title="Move down"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${index === faculties.length - 1 || isDusting || isReordering
-                                                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                                                        : 'border-gray-300 text-gray-500 hover:bg-gray-100 cursor-pointer'
-                                                        }`}
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
-                                                </button>
-                                                {/* Delete button */}
-                                                <button
-                                                    onClick={() => handleRemove(index)}
-                                                    disabled={isDusting}
-                                                    title="Remove"
-                                                    className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${isDusting
-                                                        ? 'border-red-100 text-red-200 cursor-not-allowed'
-                                                        : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
-                                                        }`}
-                                                >
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {/* Inline undo row shown right after deleted item position */}
-                                        {deletedRow && deletedRow.index === index + 1 && (
-                                            <div className="grid grid-cols-[40px_minmax(80px,1fr)_minmax(100px,2fr)_minmax(60px,1fr)_minmax(80px,1fr)_minmax(80px,100px)] border-b border-gray-100 bg-gray-50 items-center">
-                                                <div />
-                                                <div className="col-span-4 px-4 py-3 text-sm text-gray-500 italic">Subject deleted.</div>
-                                                <div className="px-4 py-3">
+                        {visibleFaculties.length === 0 && !(lastRemovedFaculties && lastRemovedFaculties.length > 0) && !deletedRow ? (
+                            <div className="min-h-[260px] flex items-center justify-center px-6 py-12 text-xl text-[#1f1f1f] font-medium">
+                                All subjects have been deleted.
+                            </div>
+                        ) : (
+                            <div className="max-h-[420px] overflow-y-auto custom-scrollbar px-0">
+                                {visibleFaculties.map((faculty, index) => {
+                                    const hasClash = clashingUids.has(faculty.uid);
+                                    const isDusting = rowEffects[faculty.uid] === 'animate-dust-out';
+                                    const nameParts = faculty.courseName.split('__');
+                                    const slotParts = faculty.slot.split('__');
+                                    const fullIndex = faculties.findIndex((f) => f.uid === faculty.uid);
+                                    return (
+                                        <div key={faculty.uid}>
+                                            <div
+                                                className={`grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] items-center transition-colors ${isDusting ? 'pointer-events-none' : ''} ${hasClash ? 'bg-red-50' : 'bg-white hover:bg-[#f8f8f8]'} ${rowEffects[faculty.uid] || ''}`}
+                                            >
+                                                <div className={`px-5 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{faculty.no}</div>
+                                                <div className={`px-5 py-4 text-sm font-semibold font-mono ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>{faculty.courseCode}</div>
+                                                <div className={`px-5 py-4 text-sm leading-relaxed ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
+                                                    {nameParts.map((n, i) => <div key={i}>{n}</div>)}
+                                                </div>
+                                                <div className={`px-5 py-4 text-sm leading-relaxed ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
+                                                    {faculty.facultyName}
+                                                </div>
+                                                <div className={`px-5 py-4 text-sm font-semibold ${hasClash ? 'text-red-600' : 'text-[#1f1f1f]'}`}>
+                                                    {slotParts.map((s, i) => <div key={i}>{s}</div>)}
+                                                </div>
+                                                <div className="px-5 py-4 flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={handleUndoSingleDelete}
-                                                        className="text-sm font-bold text-gray-800 hover:text-black transition cursor-pointer"
-                                                    >Undo</button>
+                                                        onClick={() => handleMoveUp(fullIndex)}
+                                                        disabled={fullIndex <= 0 || isDusting || isReordering}
+                                                        title="Move up"
+                                                        className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${fullIndex <= 0 || isDusting || isReordering
+                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                            : 'border-gray-300 text-gray-600 hover:bg-gray-100 cursor-pointer'
+                                                            }`}
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6" /></svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMoveDown(fullIndex)}
+                                                        disabled={fullIndex === faculties.length - 1 || isDusting || isReordering}
+                                                        title="Move down"
+                                                        className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${fullIndex === faculties.length - 1 || isDusting || isReordering
+                                                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                                            : 'border-gray-300 text-gray-600 hover:bg-gray-100 cursor-pointer'
+                                                            }`}
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRemove(fullIndex)}
+                                                        disabled={isDusting}
+                                                        title="Remove"
+                                                        className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${isDusting
+                                                            ? 'border-red-100 text-red-200 cursor-not-allowed'
+                                                            : 'border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 cursor-pointer'
+                                                            }`}
+                                                    >
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                            {/* Undo row at bottom when deleted row was last */}
-                            {deletedRow && faculties.length === 0 && (
-                                <div className="grid grid-cols-[40px_minmax(80px,1fr)_minmax(100px,2fr)_minmax(60px,1fr)_minmax(80px,1fr)_minmax(80px,100px)] border-b border-gray-100 bg-gray-50 items-center">
-                                    <div />
-                                    <div className="col-span-4 px-4 py-3 text-sm text-gray-500 italic">Subject deleted.</div>
-                                    <div className="px-4 py-3">
-                                        <button
-                                            onClick={handleUndoSingleDelete}
-                                            className="text-sm font-bold text-gray-800 hover:text-black transition cursor-pointer"
-                                        >Undo</button>
-                                    </div>
-                                </div>
-                            )}
-                            {/* Remove all undo row */}
-                            {faculties.length === 0 && lastRemovedFaculties && lastRemovedFaculties.length > 0 && (
-                                <div className="grid grid-cols-[40px_minmax(80px,1fr)_minmax(100px,2fr)_minmax(60px,1fr)_minmax(80px,1fr)_minmax(80px,100px)] border-b border-gray-100 bg-gray-50 items-center">
-                                    <div />
-                                    <div className="col-span-4 px-4 py-3 text-sm text-gray-500 italic">All courses deleted.</div>
-                                    <div className="px-4 py-3">
-                                        <button
-                                            onClick={handleUndoRemoveAll}
-                                            className="text-sm font-bold text-gray-800 hover:text-black transition cursor-pointer"
-                                        >Undo</button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                            {deletedRow && deletedRow.index === index + 1 && (
+                                                <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                                    <div />
+                                                    <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
+                                                    <div className="px-5 py-3 col-span-2 text-right">
+                                                        <button
+                                                            onClick={handleUndoSingleDelete}
+                                                            className="text-sm font-bold text-[#1f1f1f] hover:text-black transition cursor-pointer"
+                                                        >Undo</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
 
-                    {/* Footer: Remove all */}
-                    {faculties.length > 0 && (
-                        <div className="px-6 py-3 border-t border-gray-100">
+                                {deletedRow && faculties.length === 0 && (
+                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                        <div />
+                                        <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">Subject deleted.</div>
+                                        <div className="px-5 py-3 col-span-2 text-right">
+                                            <button
+                                                onClick={handleUndoSingleDelete}
+                                                className="text-sm font-bold text-[#1f1f1f] hover:text-black transition cursor-pointer"
+                                            >Undo</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {faculties.length === 0 && lastRemovedFaculties && lastRemovedFaculties.length > 0 && (
+                                    <div className="grid grid-cols-[60px_minmax(120px,1fr)_minmax(220px,1.4fr)_minmax(180px,1.2fr)_minmax(120px,1fr)_minmax(90px,120px)] border-b border-[#f0f0f0] bg-[#fafafa] items-center">
+                                        <div />
+                                        <div className="col-span-3 px-5 py-3 text-sm text-gray-600 italic">All courses deleted.</div>
+                                        <div className="px-5 py-3 col-span-2 text-right">
+                                            <button
+                                                onClick={handleUndoRemoveAll}
+                                                className="text-sm font-bold text-[#1f1f1f] hover:text-black transition cursor-pointer"
+                                            >Undo</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="px-6 py-4 flex items-center justify-between border-t border-[#ededed] bg-[#fcfcfc]">
+                            
+                            <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 bg-[#f2e6b5] rounded-xl px-3 py-2 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                            <span className="text-sm font-semibold text-[#1f1f1f]">All subjects mode</span>
                             <button
-                                onClick={handleRemoveAll}
-                                className="text-sm font-semibold text-red-500 hover:text-red-700 transition cursor-pointer"
+                                type="button"
+                                onClick={() => setIsHelpOpen(true)}
+                                className="w-7 h-7 rounded-full bg-[#e6c44c] text-[#1f1f1f] font-bold text-sm shadow-inner grid place-items-center hover:brightness-95 transition"
+                                aria-label="All subjects mode info"
                             >
-                                Remove all
+                                ?
+                            </button>
+                            <label className="relative inline-flex items-center cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={allSubjectsMode}
+                                    onChange={(e) => setAllSubjectsMode(e.target.checked)}
+                                />
+                                <div className="w-12 h-7 bg-white border border-[#d8d1a3] rounded-full peer-checked:bg-[#e6c44c] transition-colors duration-200"></div>
+                                <div className="absolute left-[4px] top-[4px] w-5 h-5 bg-[#d8d1a3] rounded-full transition-all duration-200 peer-checked:translate-x-[20px] peer-checked:bg-white" />
+                            </label>
+                        </div>
+                    </div><button
+                                onClick={handleRemoveAll}
+                                className="flex items-center gap-2 text-sm font-semibold text-[#c9302c] bg-white border border-[#e9b3b0] rounded-full px-4 py-2 shadow-[0_3px_8px_rgba(0,0,0,0.08)] hover:bg-[#fff5f5] transition cursor-pointer"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#c9302c]">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                </svg>
+                                Delete all
                             </button>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
+            
 
-            {/* Bottom nav */}
-            <div className="bg-white border-t border-gray-300 py-4 px-[clamp(16px,2vw,32px)] shadow-lg animate-lucid-fade-up-delayed shrink-0">
-                <div className="flex flex-wrap items-center justify-between max-w-7xl mx-auto gap-3">
-                    <div className="flex items-center gap-3">
+            {/* Bottom Navigation */}
+            <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 w-full flex justify-center mt-auto">
+                <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
+                    {/* LEFT - USER BOX */}
+                    <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                         {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
+                            <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
                         ) : (
-                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                                {session?.user?.name?.[0] || "?"}
+                            </div>
                         )}
-                        <span className="text-gray-700 text-sm font-semibold">{session?.user?.name || 'Guest'}</span>
+                        <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                            {session?.user?.name || "Guest"}
+                        </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* CENTER - STEPS BOX */}
+                    <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
                         {[1, 2, 3, 4].map((num) => (
                             <button
                                 key={num}
                                 onClick={() => {
                                     if (num === 1) router.push('/preferences');
                                     if (num === 2) router.push('/courses');
-                                    if (num === 3) router.push('/timetable');
+                                    if (num === 3) syncAndOpenTimetable();
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 2 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'
-                                    }`}
+                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                                    num === 2
+                                        ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
+                                        : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                                }`}
                             >
-                                {num === 2 ? '2. Faculty Preferences' : num}
+                                {num === 2 ? '2. Courses' : num}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* RIGHT - ACTION BOX */}
+                    <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                         <button
-                            onClick={() => {
-                                deleteCookie('editingTimetableId');
-                                router.back();
-                            }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            onClick={() => { deleteCookie('editingTimetableId'); router.back(); }}
+                            className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Previous
                         </button>
                         <button
-                            onClick={() => router.push('/timetable')}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition cursor-pointer"
+                            onClick={syncAndOpenTimetable}
+                            className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Next
                         </button>
@@ -558,19 +604,48 @@ export default function CoursesPage() {
                 </div>
             </div>
 
+            {isHelpOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setIsHelpOpen(false)}></div>
+                    <div className="relative w-[92%] max-w-[520px] bg-[#f1e4a2] border-[4px] border-black rounded-[18px] shadow-[0_16px_32px_rgba(0,0,0,0.35)] overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b-[3px] border-black bg-[#f1e4a2]">
+                            <span className="flex gap-2">
+                                <span className="w-3 h-3 rounded-full bg-[#d4b047]"></span>
+                                <span className="w-3 h-3 rounded-full bg-[#c27b3f]"></span>
+                                <span className="w-3 h-3 rounded-full bg-[#c8c05c]"></span>
+                            </span>
+                            <div className="flex-1 text-center text-lg font-bold text-[#1f1f1f]">Alert</div>
+                            <span className="w-10" aria-hidden="true"></span>
+                        </div>
+                        <div className="px-6 sm:px-8 py-7 text-center text-[#1f1f1f]">
+                            <div className="space-y-6 text-base leading-relaxed font-semibold">
+                                <div>
+                                    <div className="font-extrabold">All Subjects Mode - ON</div>
+                                    <div className="font-normal mt-2">Generated timetables strictly include all of the selected subjects.</div>
+                                </div>
+                                <div>
+                                    <div className="font-extrabold">All Subjects Mode - OFF</div>
+                                    <div className="font-normal mt-2">Subjects are prioritized based on their order. If a clash is detected then the subject with lower priority is excluded.</div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsHelpOpen(false)}
+                                className="mt-8 inline-flex items-center justify-center px-8 py-2.5 bg-[#f0d86f] border-[3px] border-black rounded-[12px] text-base font-bold text-[#1f1f1f] shadow-[0_6px_0px_rgba(0,0,0,0.18)] hover:translate-y-[1px] hover:shadow-[0_4px_0px_rgba(0,0,0,0.18)] transition"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
                 @keyframes lucidFadeUp {
                     from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                @keyframes lucidRow {
-                    from { opacity: 0; transform: translateX(8px); }
-                    to { opacity: 1; transform: translateX(0); }
-                }
-                .animate-lucid-fade-up { animation: lucidFadeUp 420ms ease-out; }
                 .animate-lucid-fade-up-delayed { animation: lucidFadeUp 520ms ease-out; }
-                .animate-lucid-row { animation: lucidRow 260ms ease-out; }
-
                 @keyframes cartoonMoveUp {
                     0% { transform: translateY(0) scale(1,1); }
                     40% { transform: translateY(-8px) scale(1.02,0.98); }
@@ -591,6 +666,11 @@ export default function CoursesPage() {
                 .animate-cartoon-move-up { animation: cartoonMoveUp 620ms cubic-bezier(0.22,0.7,0.2,1); }
                 .animate-cartoon-move-down { animation: cartoonMoveDown 620ms cubic-bezier(0.22,0.7,0.2,1); }
                 .animate-dust-out { animation: dustOut 420ms steps(6,end) forwards; }
+                .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #7bcf86 #eeeeee; }
+                .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: #eeeeee; border-radius: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #7bcf86; border-radius: 6px; border: 1px solid #eeeeee; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6bc679; }
             `}</style>
         </div>
     );

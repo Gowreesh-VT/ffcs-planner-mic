@@ -55,7 +55,10 @@ const getCookie = (name: string): string | null => {
     return null;
 };
 
-const STEP_COLORS = ['#A0C4FF', '#FFB3D9', '#B5EAD7', '#A0C4FF', '#FFB3D9', '#B5EAD7'];
+const keepFirst = (arr: string[]): string[] => (arr.length > 0 ? [arr[0]] : []);
+
+const STEP_COLORS = ['#9bc0f6', '#eedaff', '#d1fae5', '#9bc0f6', '#eedaff', '#d1fae5'];
+const STEP_BORDER_COLORS = ['#759fdf', '#bfa1eb', '#9dcbb5', '#759fdf', '#bfa1eb', '#9dcbb5'];
 const STEP_LABELS = [
     'Select Department',
     'Select Domain',
@@ -80,21 +83,23 @@ export default function PreferencesPage() {
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
     const [selectedFaculties, setSelectedFaculties] = useState<string[]>([]);
+    const [savedFacultyPreferences, setSavedFacultyPreferences] = useState<string[]>([]);
     const [facultyPriority, setFacultyPriority] = useState<'slot' | 'faculty'>('slot');
     const [isVisible, setIsVisible] = useState(false);
+    const [selectionError, setSelectionError] = useState('');
 
     const moveFacultyUp = (index: number) => {
         if (index === 0) return;
-        const updated = [...selectedFaculties];
+        const updated = [...savedFacultyPreferences];
         [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
-        setSelectedFaculties(updated);
+        setSavedFacultyPreferences(updated);
     };
 
     const moveFacultyDown = (index: number) => {
-        if (index === selectedFaculties.length - 1) return;
-        const updated = [...selectedFaculties];
+        if (index === savedFacultyPreferences.length - 1) return;
+        const updated = [...savedFacultyPreferences];
         [updated[index + 1], updated[index]] = [updated[index], updated[index + 1]];
-        setSelectedFaculties(updated);
+        setSavedFacultyPreferences(updated);
     };
     // Load preferences from cookies on mount
     useEffect(() => {
@@ -112,11 +117,20 @@ export default function PreferencesPage() {
                 setCurrentStep(parsedStep);
             }
         }
-        if (savedDepartments) setSelectedDepartments(JSON.parse(savedDepartments));
-        if (savedDomains) setSelectedDomains(JSON.parse(savedDomains));
-        if (savedSubjects) setSelectedSubjects(JSON.parse(savedSubjects));
+        if (savedDepartments) {
+            const parsed = JSON.parse(savedDepartments);
+            setSelectedDepartments(keepFirst(Array.isArray(parsed) ? parsed : []));
+        }
+        if (savedDomains) {
+            const parsed = JSON.parse(savedDomains);
+            setSelectedDomains(keepFirst(Array.isArray(parsed) ? parsed : []));
+        }
+        if (savedSubjects) {
+            const parsed = JSON.parse(savedSubjects);
+            setSelectedSubjects(keepFirst(Array.isArray(parsed) ? parsed : []));
+        }
         if (savedSlots) setSelectedSlots(JSON.parse(savedSlots));
-        if (savedFaculties) setSelectedFaculties(JSON.parse(savedFaculties));
+        if (savedFaculties) setSavedFacultyPreferences(JSON.parse(savedFaculties));
         if (savedPriority) setFacultyPriority(savedPriority as 'slot' | 'faculty');
 
 
@@ -129,9 +143,12 @@ export default function PreferencesPage() {
         setCookie('preferenceDomains', JSON.stringify(selectedDomains));
         setCookie('preferenceSubjects', JSON.stringify(selectedSubjects));
         setCookie('preferenceSlots', JSON.stringify(selectedSlots));
-        setCookie('preferenceMultipleFaculties', JSON.stringify(selectedFaculties));
         setCookie('facultyPriority', facultyPriority);
-    }, [currentStep, selectedDepartments, selectedDomains, selectedSubjects, selectedSlots, selectedFaculties, facultyPriority]);
+    }, [currentStep, selectedDepartments, selectedDomains, selectedSubjects, selectedSlots, facultyPriority]);
+
+    useEffect(() => {
+        setCookie('preferenceMultipleFaculties', JSON.stringify(savedFacultyPreferences));
+    }, [savedFacultyPreferences]);
 
     useEffect(() => {
         const timer = window.setTimeout(() => setIsVisible(true), 40);
@@ -259,6 +276,14 @@ export default function PreferencesPage() {
     }, [selectedSubjects, selectedDomains, selectedSlots, departmentData]);
 
     const handleNext = () => {
+        if (currentStep === 5) {
+            const persisted = persistCurrentSelection(false);
+            if (persisted) {
+                setCurrentStep(6);
+            }
+            return;
+        }
+
         if (currentStep < 6) {
             setCurrentStep(prev => prev + 1);
         }
@@ -277,12 +302,16 @@ export default function PreferencesPage() {
     };
 
     const handleAddAnotherProfessor = () => {
-        setCurrentStep(5);
-        setCookie('preferenceStep', '5');
+        setSelectionError('');
+        setSelectedSlots([]);
+        setSelectedFaculties([]);
+        setCurrentStep(4);
+        setCookie('preferenceStep', '4');
     };
 
     const handleDepartmentSelect = (dept: string) => {
-        setSelectedDepartments([dept]);
+        setSelectionError('');
+        setSelectedDepartments(prev => (prev[0] === dept ? [] : [dept]));
         setSelectedDomains([]);
         setSelectedSubjects([]);
         setSelectedSlots([]);
@@ -290,37 +319,37 @@ export default function PreferencesPage() {
     };
 
     const handleDomainSelect = (domain: string) => {
-        setSelectedDomains(prev =>
-            prev.includes(domain) ? prev.filter(d => d !== domain) : [...prev, domain]
-        );
+        setSelectionError('');
+        setSelectedDomains(prev => (prev[0] === domain ? [] : [domain]));
         setSelectedSubjects([]);
         setSelectedSlots([]);
         setSelectedFaculties([]);
     };
 
     const handleSubjectSelect = (subject: string) => {
-        setSelectedSubjects(prev =>
-            prev.includes(subject) ? prev.filter(s => s !== subject) : [...prev, subject]
-        );
+        setSelectionError('');
+        setSelectedSubjects(prev => (prev[0] === subject ? [] : [subject]));
         setSelectedSlots([]);
         setSelectedFaculties([]);
     };
 
     const handleSlotSelect = (slot: string) => {
+        setSelectionError('');
         setSelectedSlots(prev =>
             prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]
         );
-        setSelectedFaculties([]);
     };
 
     const handleFacultySelect = (faculty: string) => {
+        setSelectionError('');
         setSelectedFaculties(prev =>
             prev.includes(faculty) ? prev.filter(f => f !== faculty) : [...prev, faculty]
         );
     };
 
-    const saveCurrentSelection = () => {
+    const persistCurrentSelection = (resetWizard = true) => {
         if (selectedSubjects.length > 0 && selectedSlots.length > 0 && selectedFaculties.length > 0) {
+            setSelectionError('');
             let newCourses: fullCourseData[] = [];
 
             selectedDomains.forEach(domain => {
@@ -363,30 +392,86 @@ export default function PreferencesPage() {
             });
 
             if (newCourses.length > 0) {
-                newCourses.forEach(c => addCourse(c));
+                let existingCourses: fullCourseData[] = [];
 
                 try {
                     const existingCoursesRaw = getCookie('preferenceCourses');
-                    let existingCourses: fullCourseData[] = existingCoursesRaw ? JSON.parse(existingCoursesRaw) : [];
+                    existingCourses = existingCoursesRaw ? JSON.parse(existingCoursesRaw) : [];
+                } catch (error) {
+                    console.error('Error reading preferenceCourses cookie:', error);
+                }
+
+                const existingEntries = new Set(
+                    existingCourses.flatMap(course =>
+                        course.courseSlots.flatMap(courseSlot =>
+                            courseSlot.slotFaculties.map(faculty => `${course.courseCode}||${courseSlot.slotName}||${faculty.facultyName}`)
+                        )
+                    )
+                );
+
+                const duplicateEntry = newCourses.flatMap(course =>
+                    course.courseSlots.flatMap(courseSlot =>
+                        courseSlot.slotFaculties.map(faculty => ({
+                            key: `${course.courseCode}||${courseSlot.slotName}||${faculty.facultyName}`,
+                            courseCode: course.courseCode,
+                            courseName: course.courseName,
+                            slotName: courseSlot.slotName,
+                            facultyName: faculty.facultyName,
+                        }))
+                    )
+                ).find(entry => existingEntries.has(entry.key));
+
+                if (duplicateEntry) {
+                    setSelectionError(
+                        `${duplicateEntry.facultyName} is already added for ${duplicateEntry.courseCode} (${duplicateEntry.slotName}).`
+                    );
+                    return false;
+                }
+
+                newCourses.forEach(c => addCourse(c));
+
+                try {
+                    let updatedExistingCourses = [...existingCourses];
 
                     newCourses.forEach(course => {
-                        existingCourses = existingCourses.filter(existing => existing.id !== course.id);
-                        existingCourses.push(course);
+                        updatedExistingCourses = updatedExistingCourses.filter(existing => existing.id !== course.id);
+                        updatedExistingCourses.push(course);
                     });
 
-                    setCookie('preferenceCourses', JSON.stringify(existingCourses));
+                    setCookie('preferenceCourses', JSON.stringify(updatedExistingCourses));
                 } catch (error) {
                     console.error('Error saving preferenceCourses cookie:', error);
                     setCookie('preferenceCourses', JSON.stringify(newCourses));
                 }
+
+                setSavedFacultyPreferences(prev => {
+                    const merged = [...prev];
+                    selectedFaculties.forEach(faculty => {
+                        if (!merged.includes(faculty)) {
+                            merged.push(faculty);
+                        }
+                    });
+                    return merged;
+                });
             }
 
-            // Clear state after saving
-            setSelectedSubjects([]);
-            setSelectedSlots([]);
-            setSelectedFaculties([]);
-            setCurrentStep(1);
+            if (resetWizard) {
+                setSelectedSubjects([]);
+                setSelectedSlots([]);
+                setSelectedFaculties([]);
+                setCurrentStep(1);
+            } else {
+                setSelectedFaculties([]);
+            }
+
+            return true;
         }
+
+        return false;
+    };
+
+    const saveCurrentSelection = () => {
+        persistCurrentSelection(true);
     };
 
     const handleFinish = () => {
@@ -406,7 +491,7 @@ export default function PreferencesPage() {
             case 5:
                 return selectedFaculties.length > 0;
             case 6:
-                return selectedFaculties.length > 0;
+                return savedFacultyPreferences.length > 0;
             default:
                 return false;
         }
@@ -417,35 +502,48 @@ export default function PreferencesPage() {
     return (
         <div className={`h-screen bg-[#F5E6D3] font-sans flex flex-col overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
             {/* Main Content */}
-            <div className="flex-1 p-[clamp(16px,2.5vw,40px)] flex flex-col min-h-0 overflow-hidden">
-                <div className="flex items-center gap-4 mb-8 shrink-0">
-
-                    <h1 className="text-3xl font-bold text-black animate-lucid-fade-up pb-[10px]">Select Your Preferences</h1>
-
+            <div className="w-[98%] max-w-[1800px] flex-1 min-h-0 flex flex-col bg-[#FFFBF0] rounded-[32px] p-[clamp(12px,1.5vw,24px)] my-[clamp(8px,1vh,16px)] pb-4 shadow-sm mx-auto">
+                <div className="flex items-center gap-4 pb-4 ml-2 shrink-0">
+                    <h1 className="text-[26px] lg:text-3xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
                 </div>
 
-                <div className="flex gap-[clamp(8px,1vw,24px)] flex-1 min-h-0 min-w-0 overflow-hidden">
-                    {/* Step Panels */}
-                    {[1, 2, 3, 4, 5, 6].map(stepNum => (
-                        <div
-                            key={stepNum}
-                            onClick={stepNum === currentStep ? undefined : () => handleStepClick(stepNum)}
-                            className={`rounded-2xl flex items-center justify-center transition-all duration-300 overflow-hidden ${stepNum === currentStep ? 'flex-[3]' : 'flex-1'
-                                } ${stepNum === currentStep ? 'shadow-xl cursor-default' : 'shadow-md cursor-pointer'}`}
-                            style={{ backgroundColor: STEP_COLORS[stepNum - 1] }}
-                        >
+                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 flex flex-col min-h-0 overflow-hidden px-6 py-6 lg:px-10 lg:py-8 mt-2 animate-lucid-fade-up-delayed">
+                    <div className="flex gap-[clamp(10px,1vw,18px)] mt-2 lg:mt-3 flex-1 min-h-0 min-w-0 overflow-x-auto" style={{ scrollBehavior: 'smooth' }}>
+                        {/* Step Panels */}
+                        {[1, 2, 3, 4, 5, 6].map(stepNum => (
+                            <div
+                                key={stepNum}
+                                onClick={stepNum === currentStep ? undefined : () => handleStepClick(stepNum)}
+                                className={`rounded-2xl flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
+  stepNum === currentStep
+    ? 'flex-[2.2] min-w-[320px] max-w-[500px]'
+    : 'flex-[0.6] min-w-[70px]'
+}`}
+                                style={{ backgroundColor: STEP_COLORS[stepNum - 1] }}
+                            >
                             {stepNum === currentStep ? (
-                                <div key={`active-step-${currentStep}`} className="w-full h-full px-6 pb-4 flex flex-col animate-lucid-panel-in">
-                                    <div className="h-[76px] flex items-center shrink-0">
-                                        <h2 className="text-2xl font-bold text-black m-0 leading-none">
+                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-4 lg:px-6 pt-5 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl animate-lucid-panel-in">
+                                    <div 
+                                        className="flex items-center justify-center shrink-0 border-b-[4px] pb-4 mb-3  px-4 lg:mx-[-24px] lg:px-6"
+                                        style={{ borderBottomColor: STEP_BORDER_COLORS[stepNum - 1] }}
+                                    >
+                                        <h2 className="text-xl lg:text-2xl font-bold text-black m-0 leading-none">
                                             {stepNum}. {STEP_LABELS[stepNum - 1]}
                                         </h2>
                                     </div>
 
-                                    <div className="flex-1 bg-white/40 rounded-lg p-6 overflow-y-auto custom-scrollbar">
+                                    <div className="flex-1 bg-transparent p-2 lg:p-4 overflow-y-auto custom-scrollbar flex flex-col">
+                                        {selectionError && (
+                                            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                                                {selectionError}
+                                            </div>
+                                        )}
                                         {/* Step 1: Department Selection */}
                                         {stepNum === 1 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1">
+                                                    Select one option
+                                                </p>
                                                 {departments.map(dept => (
                                                     <button
                                                         key={dept}
@@ -464,6 +562,9 @@ export default function PreferencesPage() {
                                         {/* Step 2: Domain Selection */}
                                         {stepNum === 2 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1">
+                                                    Select one option
+                                                </p>
                                                 {domains.length > 0 ? domains.map(domain => (
                                                     <button
                                                         key={domain}
@@ -486,6 +587,9 @@ export default function PreferencesPage() {
                                         {/* Step 3: Subject Selection */}
                                         {stepNum === 3 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1">
+                                                    Select one option
+                                                </p>
                                                 {subjects.length > 0 ? subjects.map(subject => (
                                                     <button
                                                         key={subject}
@@ -535,6 +639,9 @@ export default function PreferencesPage() {
                                         {/* Step 5: Faculty Selection */}
                                         {stepNum === 5 && (
                                             <div style={{ display: 'grid', gap: '10px' }}>
+                                                <p className={`text-xs font-semibold uppercase tracking-wide text-gray-700 mb-1 ${selectionError ? 'mt-1' : ''}`}>
+                                                    Select one or more options
+                                                </p>
                                                 {faculties.length > 0 ? faculties.map((faculty, idx) => (
                                                     <button
                                                         key={idx}
@@ -561,16 +668,14 @@ export default function PreferencesPage() {
                                                     Professors selected in Step 5 are auto-added:
                                                 </p>
 
-                                                <div className="bg-gray-100 rounded-lg p-3">
-                                                    <p className="text-sm font-bold text-gray-700 mb-2">Your Faculty Preferences:</p>
-                                                    {selectedFaculties.length > 0 ? (
+                                                <div className="bg-white/50 rounded-lg p-4 shadow-sm border border-white/60">
+                                                    <p className="text-sm font-bold text-gray-800 mb-3">Your Faculty Preferences:</p>
+                                                    {savedFacultyPreferences.length > 0 ? (
                                                         <div style={{ display: 'grid', gap: '8px' }}>
-                                                            {selectedFaculties.map((faculty, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center bg-white p-3 rounded shadow-sm">
-                                                                    <span className="text-sm font-semibold">{faculty}</span>
-                                                                    
+                                                            {savedFacultyPreferences.map((faculty, idx) => (
+                                                                <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                                                                    <span className="text-sm font-bold text-gray-900">{faculty}</span>
                                                                     <div className="flex gap-2 items-center">
-                                                                        {/* UP BUTTON */}
                                                                         <button
                                                                             onClick={() => moveFacultyUp(idx)}
                                                                             disabled={idx === 0}
@@ -578,23 +683,19 @@ export default function PreferencesPage() {
                                                                         >
                                                                             ↑
                                                                         </button>
-
-                                                                        {/* DOWN BUTTON */}
                                                                         <button
                                                                             onClick={() => moveFacultyDown(idx)}
-                                                                            disabled={idx === selectedFaculties.length - 1}
-                                                                            className={`px-2 py-1 rounded border ${idx === selectedFaculties.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}`}
+                                                                            disabled={idx === savedFacultyPreferences.length - 1}
+                                                                            className={`px-2 py-1 rounded border ${idx === savedFacultyPreferences.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"}`}
                                                                         >
                                                                             ↓
                                                                         </button>
-
-                                                                        {/* DELETE */}
                                                                         <button
                                                                             onClick={() => {
-                                                                                const updated = selectedFaculties.filter((_, i) => i !== idx);
-                                                                                setSelectedFaculties(updated);
+                                                                                const updated = savedFacultyPreferences.filter((_, i) => i !== idx);
+                                                                                setSavedFacultyPreferences(updated);
                                                                             }}
-                                                                            className="text-red-500 font-bold px-2"
+                                                                            className="text-red-500 hover:text-red-700 font-bold ml-2 text-lg hover:bg-red-50 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
                                                                         >
                                                                             ×
                                                                         </button>
@@ -613,56 +714,51 @@ export default function PreferencesPage() {
                                     </div>
 
                                     {/* Navigation arrows within active panel */}
-                                    <div className="flex justify-between mt-auto pt-4 gap-2 shrink-0">
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-                                            disabled={currentStep === 1}
-                                            className={`px-4 py-2 rounded-lg bg-white font-bold text-xl cursor-pointer ${currentStep === 1
-                                                ? 'opacity-40 cursor-not-allowed'
-                                                : 'hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'
-                                                }`}
-                                        >
-                                            ←
-                                        </button>
-                                        {currentStep === 6 ? (
-                                            <div className="flex w-full gap-2">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleAddAnotherProfessor(); }}
-                                                    title={'Reset to Step 5 and add another professor'}
-                                                    className="flex-1 px-3 py-2 rounded-lg font-bold text-sm bg-[#FFF7ED] text-[#EA580C] hover:bg-[#FFEDD5] hover:shadow-sm hover:-translate-y-0.5 transition-all duration-200 border border-[#FDBA74] cursor-pointer"
-                                                >
-                                                    + Add another
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        saveCurrentSelection();
-                                                        router.push('/courses');
-                                                    }}
-                                                    title={'Save current preference and view all courses'}
-                                                    className="flex-1 px-4 py-2 rounded-lg font-bold text-sm bg-[#10B981] text-white hover:bg-[#059669] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                                                >
-                                                    Save & Continue →
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                                                disabled={!canProceed()}
-                                                className={`px-4 py-2 rounded-lg bg-white font-bold text-xl cursor-pointer ${!canProceed()
-                                                    ? 'opacity-40 cursor-not-allowed'
-                                                    : 'hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'
-                                                    }`}
-                                            >
-                                                →
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-full flex items-center justify-center p-2">
-                                    <div
-                                        className="text-xl font-bold tracking-wide whitespace-nowrap"
+                                     <div className="flex justify-between mt-auto pt-4 shrink-0 px-2 pb-2">
+                                         <button
+                                             onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
+                                             disabled={currentStep === 1}
+                                             className={`w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 ${currentStep === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}`}
+                                         >
+                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                         </button>
+                                         
+                                         {currentStep === 6 ? (
+                                             <div className="flex w-full gap-2 px-2">
+                                                 <button
+                                                     onClick={(e) => { e.stopPropagation(); handleAddAnotherProfessor(); }}
+                                                     title={'Reset to Step 5 and add another professor'}
+                                                     className="flex-1 px-3 py-2 rounded-lg font-bold text-sm bg-white text-blue-700 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                                                 >
+                                                     + Add another
+                                                 </button>
+                                                 <button
+                                                     onClick={(e) => {
+                                                         e.stopPropagation();
+                                                         router.push('/courses');
+                                                     }}
+                                                     title={'Save current preference and view all courses'}
+                                                     className="flex-1 px-4 py-2 rounded-lg font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                                                 >
+                                                     Save & Continue →
+                                                 </button>
+                                             </div>
+                                         ) : (
+                                             <button
+                                                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                                                 disabled={!canProceed()}
+                                                 className={`w-11 h-11 flex items-center justify-center rounded-[10px] bg-white text-gray-900 shadow-sm transition-all duration-200 cursor-pointer ${!canProceed() ? 'opacity-40 cursor-not-allowed' : 'hover:shadow-md'}`}
+                                             >
+                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                             </button>
+                                         )}
+                                     </div>
+                                 </div>
+                             ) : (
+                                 <div className="h-full flex flex-col items-center py-6 lg:py-8">
+                                     <span className="text-2xl font-bold text-black mb-4">{stepNum}</span>
+                                     <div
+                                         className="text-lg lg:text-xl font-bold tracking-wide flex-1 flex items-center justify-center whitespace-nowrap"
                                         style={{
                                             writingMode: 'vertical-rl',
                                             textOrientation: 'mixed',
@@ -677,77 +773,80 @@ export default function PreferencesPage() {
                     ))}
                 </div>
             </div>
+        </div>
 
-            {/* Bottom Navigation */}
-            <div className="bg-white border-t border-gray-300 py-4 px-[clamp(16px,2vw,32px)] shadow-lg animate-lucid-fade-up-delayed shrink-0">
-                <div className="flex flex-wrap items-center justify-between max-w-7xl mx-auto gap-3">
-                    <div className="flex items-center gap-3">
-                        {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
-                        ) : (
-                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                        )}
-                        <span className="text-gray-700 text-sm truncate max-w-[120px]">{session?.user?.name || "Guest"}</span>
-                    </div>
+        {/* Bottom Navigation */}
+        <div className="bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] shrink-0 w-full flex justify-center mt-auto">
+            <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
+                {/* LEFT - USER BOX */}
+                <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                    {session?.user?.image ? (
+                        <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
+                    ) : (
+                        <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                            {session?.user?.name?.[0] || "?"}
+                        </div>
+                    )}
+                    <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                        {session?.user?.name || "Guest"}
+                    </span>
+                </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        {[1, 2, 3, 4].map(num => (
-                            <button
-                                key={num}
-                                onClick={() => {
-                                    saveCurrentSelection();
-                                    if (num === 1) router.push('/preferences');
-                                    if (num === 2) router.push('/courses');
-                                    if (num === 3) router.push('/timetable');
-                                    if (num === 4) router.push('/saved');
-                                }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 1
-                                    ? 'bg-[#A0C4FF] text-black'
-                                    : 'bg-[#A0C4FF]/40 text-gray-700'
-                                    }`}
-                            >
-                                {num === 1 ? '1. Preferences' : num}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex gap-3">
+                {/* CENTER - STEPS BOX */}
+                <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
+                    {[1, 2, 3, 4].map((num) => (
                         <button
+                            key={num}
                             onClick={() => {
-                                saveCurrentSelection();
-                                router.push('/');
+                                if (num === 1) router.push('/preferences');
+                                if (num === 2) router.push('/courses');
+                                if (num === 3) router.push('/timetable');
+                                if (num === 4) router.push('/saved');
                             }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
+                            className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                                num === 1
+                                    ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
+                                    : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                            }`}
                         >
-                            Previous
+                            {num === 1 ? '1. Preferences' : num}
                         </button>
-                        <button
-                            onClick={() => {
-                                saveCurrentSelection();
-                                router.push('/courses');
-                            }}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
-                        >
-                            Next
-                        </button>
-                    </div>
+                    ))}
+                </div>
+
+                {/* RIGHT - ACTION BOX */}
+                <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
+                    <button
+                        onClick={() => setCookie('editingTimetableId', '', -1)}
+                        disabled={currentStep === 1}
+                        style={{ opacity: currentStep === 1 ? 0.4 : 1, cursor: currentStep === 1 ? 'not-allowed' : 'pointer' }}
+                        className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
+        </div>
 
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 8px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 4px;
+                    background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(0, 0, 0, 0.2);
+                    background: rgba(255, 255, 255, 0.5);
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(0, 0, 0, 0.3);
+                    background-color: #ffffff;
                 }
 
                 @keyframes lucidFadeUp {

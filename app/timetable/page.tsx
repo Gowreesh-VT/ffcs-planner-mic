@@ -34,12 +34,21 @@ const deleteCookie = (name: string) => {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
-const SLOT_COLORS = ['#C8F7DC', '#E0D4F5', '#FFF3B0', '#FFD6E0', '#BDD7FF', '#B8F0E0'];
+type SelectedSlotState = {
+    slot: timetableDisplayData;
+    kind: 'theory' | 'lab';
+};
 
-function getSlotColor(code: string, allCodes: string[]) {
+const THEORY_SLOT_COLORS = ['#DFFBEE', '#DFFBEE', '#DFFBEE', '#DFFBEE', '#DFFBEE', '#DFFBEE'];
+const LAB_SLOT_COLORS = ['#F6F2DD', '#F6F2DD', '#F6F2DD', '#F6F2DD', '#F6F2DD', '#F6F2DD'];
+const ACTIVE_THEORY_COLOR = '#B8EDC0';
+const ACTIVE_LAB_COLOR = '#F9EEAA';
+
+function getSlotColor(code: string, allCodes: string[], kind: 'theory' | 'lab' = 'theory') {
     const unique = [...new Set(allCodes)];
     const idx = unique.indexOf(code);
-    return SLOT_COLORS[idx % SLOT_COLORS.length];
+    const palette = kind === 'lab' ? LAB_SLOT_COLORS : THEORY_SLOT_COLORS;
+    return palette[idx % palette.length];
 }
 
 export default function TimetablePage() {
@@ -48,7 +57,7 @@ export default function TimetablePage() {
     const { timetableData, setTimetableData } = useTimetable();
 
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [selectedSlot, setSelectedSlot] = useState<timetableDisplayData | null>(null);
+    const [selectedSlot, setSelectedSlot] = useState<SelectedSlotState | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState('');
     const [clashMessage, setClashMessage] = useState<string | null>(null);
@@ -69,7 +78,7 @@ export default function TimetablePage() {
 
 
         if (!timetableData || timetableData.length === 0) {
-            const savedCoursesRaw = getCookie('preferenceCourses');
+            const savedCoursesRaw = getCookie('generatedTimetableCourses') || getCookie('preferenceCourses');
             if (savedCoursesRaw) {
                 try {
                     setIsGenerating(true);
@@ -89,6 +98,12 @@ export default function TimetablePage() {
 
     const currentTT = timetableData?.[currentIndex] || [];
     const allCodes = currentTT.map(s => s.courseCode);
+    const selectedSlotAccent = selectedSlot
+        ? getSlotColor(selectedSlot.slot.courseCode, allCodes, selectedSlot.kind)
+        : '#d9c9f7';
+    const selectedSlotBackground = selectedSlot?.kind === 'lab'
+        ? 'linear-gradient(180deg, #FFF3B0 0%, #F9EEAA 100%)'
+        : 'linear-gradient(180deg, #D6F6DA 0%, #B8EDC0 100%)';
 
     const showToast = useCallback((msg: string) => {
         setToast(msg);
@@ -348,20 +363,20 @@ export default function TimetablePage() {
                 <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-auto border border-white flex-1 min-h-0 custom-scrollbar" id="timetable-grid">
                     <div id="rat"> <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-[16px]">
                         <thead>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
+                            <tr className="border-b-[2px] border-white h-[44px]">
+                                <th className="p-2 text-center text-[11px] font-extrabold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-1 pt-3 pb-3 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[36px] px-0' : 'min-w-[65px]'}`}>
                                         {t.theory ? t.theory.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
                                     </th>
                                 ))}
                             </tr>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
+                            <tr className="border-b-[2px] border-white h-[44px]">
+                                <th className="p-2 text-center text-[11px] font-extrabold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-1 pt-3 pb-3 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[36px] px-0' : 'min-w-[65px]'}`}>
                                         {t.lab ? t.lab.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
@@ -378,9 +393,9 @@ export default function TimetablePage() {
                                             // Space for Lunch
                                             const lunchLetters = ['L', 'U', 'N', 'C', 'H'];
                                             return (
-                                                <td key="lunch-spacer" className="w-[30px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
-                                                    <div className="flex flex-col items-center justify-center h-full py-1">
-                                                        <span className="text-[11px] font-black text-black opacity-80">
+                                                <td key="lunch-spacer" className="w-[36px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
+                                                    <div className="flex flex-col items-center justify-center h-full py-2">
+                                                        <span className="text-[11px] font-black text-black/40">
                                                             {lunchLetters[rowIdx]}
                                                         </span>
                                                     </div>
@@ -402,24 +417,48 @@ export default function TimetablePage() {
                                             labLabel = row.labRight[colIdx - 7].label;
                                         }
 
+                                        const isSelectedTheory =
+                                            selectedSlot?.kind === 'theory' &&
+                                            !!theoryCell &&
+                                            theoryCell.courseCode === selectedSlot.slot.courseCode &&
+                                            theoryCell.slotName === selectedSlot.slot.slotName &&
+                                            theoryCell.facultyName === selectedSlot.slot.facultyName;
+
+                                        const isSelectedLab =
+                                            selectedSlot?.kind === 'lab' &&
+                                            !!labCell &&
+                                            labCell.courseCode === selectedSlot.slot.courseCode &&
+                                            labCell.slotName === selectedSlot.slot.slotName &&
+                                            labCell.facultyName === selectedSlot.slot.facultyName;
+
+                                        const shouldDimTheory = !!selectedSlot && !isSelectedTheory;
+                                        const shouldDimLab = !!selectedSlot && !isSelectedLab;
+
                                         return (
-                                            <td key={colIdx} className="align-top border-r-[2px] border-white p-0 bg-white">
+                                            <td key={colIdx} className="align-top border-r-[2px] border-white p-0 bg-white min-w-[65px]">
                                                 <div className="flex flex-col h-full w-full">
                                                     {/* Theory Slot */}
                                                     <div
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${theoryCell ? 'z-10' : ''}`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[46px] py-[3px] transition-all duration-300 cursor-pointer relative ${theoryCell ? 'z-10' : ''} ${isSelectedTheory ? 'z-[105] rounded-[4px] shadow-[0_0_0_1px_rgba(255,255,255,0.9),0_6px_18px_rgba(0,0,0,0.18)] scale-[1.03]' : ''}`}
                                                         style={{
-                                                            backgroundColor: theoryCell ? getSlotColor(theoryCell.courseCode, allCodes) : '#e6f9ed',
+                                                            backgroundColor: isSelectedTheory
+                                                                ? ACTIVE_THEORY_COLOR
+                                                                : theoryCell
+                                                                    ? getSlotColor(theoryCell.courseCode, allCodes, 'theory')
+                                                                    : '#f8fdfb',
+                                                            filter: shouldDimTheory ? 'blur(0.35px) saturate(1)' : 'none',
+                                                            opacity: shouldDimTheory ? 0.9 : 1,
+                                                            transform: isSelectedTheory ? 'scale(1.03)' : 'none',
                                                         }}
-                                                        onClick={() => theoryCell && setSelectedSlot(theoryCell)}
+                                                        onClick={() => theoryCell && setSelectedSlot({ slot: theoryCell, kind: 'theory' })}
                                                     >
                                                         {theoryCell ? (
                                                             <>
-                                                                <span className="text-[10px] font-bold text-black leading-tight">{theoryLabel}</span>
-                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{theoryCell.courseCode}</span>
+                                                                <span className="text-[10px] font-extrabold text-black leading-tight">{theoryLabel}</span>
+                                                                <span className="text-[7.5px] font-extrabold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[62px] leading-tight">{theoryCell.courseCode}</span>
                                                             </>
                                                         ) : (
-                                                            <span className="text-[10px] font-bold text-[#4ea075]">{theoryLabel}</span>
+                                                            <span className="text-[10px] font-bold text-[#4ea075] opacity-40">{theoryLabel}</span>
                                                         )}
                                                     </div>
 
@@ -428,19 +467,26 @@ export default function TimetablePage() {
 
                                                     {/* Lab Slot */}
                                                     <div
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${labCell ? 'z-10' : ''}`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[46px] py-[3px] transition-all duration-300 cursor-pointer relative ${labCell ? 'z-10' : ''} ${isSelectedLab ? 'z-[105] rounded-[4px] shadow-[0_0_0_1px_rgba(255,255,255,0.9),0_6px_18px_rgba(0,0,0,0.18)] scale-[1.03]' : ''}`}
                                                         style={{
-                                                            backgroundColor: labCell ? getSlotColor(labCell.courseCode, allCodes) : '#fff6e0',
+                                                            backgroundColor: isSelectedLab
+                                                                ? ACTIVE_LAB_COLOR
+                                                                : labCell
+                                                                    ? getSlotColor(labCell.courseCode, allCodes, 'lab')
+                                                                    : '#fbf9f0',
+                                                            filter: shouldDimLab ? 'blur(0.35px) saturate(1)' : 'none',
+                                                            opacity: shouldDimLab ? 0.9 : 1,
+                                                            transform: isSelectedLab ? 'scale(1.03)' : 'none',
                                                         }}
-                                                        onClick={() => labCell && setSelectedSlot(labCell)}
+                                                        onClick={() => labCell && setSelectedSlot({ slot: labCell, kind: 'lab' })}
                                                     >
                                                         {labCell ? (
                                                             <>
-                                                                <span className="text-[10px] font-bold text-black leading-tight">{labLabel}</span>
-                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{labCell.courseCode}</span>
+                                                                <span className="text-[10px] font-extrabold text-black leading-tight">{labLabel}</span>
+                                                                <span className="text-[7.5px] font-extrabold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[62px] leading-tight">{labCell.courseCode}</span>
                                                             </>
                                                         ) : (
-                                                            <span className="text-[10px] font-bold text-[#d4a044]">{labLabel}</span>
+                                                            <span className="text-[10px] font-bold text-[#d4a044] opacity-40">{labLabel}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -490,14 +536,14 @@ export default function TimetablePage() {
                         <div className="flex flex-wrap items-center gap-3">
                             <button
                                 onClick={handleShare}
-                                className="flex items-center gap-2 bg-[#A0C4FF] hover:bg-[#8ab2f2] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
+                                className="flex items-center justify-center gap-2 bg-[#A0C4FF] hover:bg-[#8ab2f2] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px] min-w-[140px]"
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
                                 Share
                             </button>
                             <button
                                 onClick={handleDownload}
-                                className="flex items-center gap-2 bg-[#C8F7DC] hover:bg-[#b0eac8] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
+                                className="flex items-center justify-center gap-2 bg-[#C8F7DC] hover:bg-[#b0eac8] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px] min-w-[140px]"
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
                                 Download
@@ -511,7 +557,7 @@ export default function TimetablePage() {
                                     setShowSaveModal(true);
                                 }}
                                 disabled={isSaving}
-                                className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
+                                className="flex items-center justify-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px] min-w-[140px]"
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
                                 Save
@@ -543,7 +589,7 @@ export default function TimetablePage() {
                                     if (num === 3) router.push('/timetable');
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 3 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'}`}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-[15px] cursor-pointer transition-all ${num === 3 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/30 text-gray-700 hover:bg-[#A0C4FF]/40'}`}
                             >
                                 {num === 3 ? '3. Timetable' : num}
                             </button>
@@ -552,10 +598,8 @@ export default function TimetablePage() {
 
                     <div className="flex gap-3">
                         <button
-                            onClick={() => {
-                                router.back();
-                            }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            onClick={() => router.push('/courses')}
+                            className="px-10 py-3 bg-[#f1eacb] border-2 border-[#A0C4FF] rounded-xl font-bold text-[15px] hover:bg-[#E8DDB8] text-black transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                         >
                             Previous
                         </button>
@@ -567,7 +611,7 @@ export default function TimetablePage() {
                                 }
                                 router.push('/saved');
                             }}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer"
+                            className="px-12 py-3 rounded-xl font-bold text-[15px] bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
                         >
                             Next
                         </button>
@@ -577,46 +621,52 @@ export default function TimetablePage() {
 
             {/* Popover */}
             {selectedSlot && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/20 backdrop-blur-[4px]" onClick={() => setSelectedSlot(null)}>
+                <div className="slot-detail-backdrop fixed inset-0 z-[100] pointer-events-none" />
+            )}
+            {selectedSlot && (
+                <div className="slot-detail-overlay fixed inset-0 z-[110] flex items-center justify-center px-4" onClick={() => setSelectedSlot(null)}>
                     <div
-                        className="bg-white rounded-[40px] shadow-2xl p-12 w-[90%] max-w-[500px] relative animate-[scaleIn_0.2s_ease] border-4"
-                        style={{ borderColor: getSlotColor(selectedSlot.courseCode, allCodes) }}
+                        className="slot-detail-dialog relative animate-[scaleIn_0.2s_ease] px-7 pt-8 pb-7 sm:px-7 sm:pt-8 sm:pb-7"
+                        style={{ borderColor: `${selectedSlotAccent}99`, background: selectedSlotBackground }}
                         onClick={e => e.stopPropagation()}
                     >
                         <button
                             onClick={() => setSelectedSlot(null)}
-                            className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors text-black"
+                            aria-label="Close slot details"
+                            className="slot-detail-close absolute right-4 top-3 text-[34px] font-light text-black transition-transform duration-200 hover:scale-110 cursor-pointer"
                         >
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            ×
                         </button>
 
-                        <div className="mb-10">
-                            <span className="px-5 py-2 rounded-full text-[12px] font-black bg-gray-100 text-gray-500 uppercase tracking-widest mb-4 inline-block">Course Details</span>
-                            <h2 className="text-[32px] font-black text-black leading-tight mt-2">{selectedSlot.courseCode}</h2>
-                            <p className="text-[18px] font-bold text-gray-600 mt-2">{selectedSlot.courseName}</p>
+                        <div className="text-center mb-6">
+                            <h2 className="text-[24px] font-black leading-tight text-black mb-1">
+                                {selectedSlot.slot.courseCode} - {selectedSlot.slot.courseName}
+                            </h2>
+                            <p className="text-[17px] font-extrabold text-black/90">
+                                Slot: {selectedSlot.slot.slotName}
+                            </p>
                         </div>
 
-                        <div className="space-y-8">
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">👨‍🏫</div>
-                                <div>
-                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Faculty</p>
-                                    <p className="text-[18px] font-bold text-black">{selectedSlot.facultyName}</p>
-                                </div>
+                        <div className="mt-6 space-y-4 text-[16px] text-black">
+                            <div className="slot-detail-field">
+                                <span className="font-bold min-w-[120px]">Faculty Name:</span>
+                                <span className="font-semibold">{selectedSlot.slot.facultyName || '-'}</span>
                             </div>
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">🕒</div>
-                                <div>
-                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Slot</p>
-                                    <p className="text-[18px] font-bold text-black">{selectedSlot.slotName}</p>
-                                </div>
+                            <div className="slot-detail-field">
+                                <span className="font-bold min-w-[120px]">Course Name:</span>
+                                <span className="font-semibold">{selectedSlot.slot.courseName || '-'}</span>
                             </div>
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-[20px]">📍</div>
-                                <div>
-                                    <p className="text-[12px] font-black text-gray-300 uppercase tracking-widest mb-1">Classroom</p>
-                                    <p className="text-[18px] font-bold text-black">Main Campus - TBD</p>
-                                </div>
+                            <div className="slot-detail-field">
+                                <span className="font-bold min-w-[120px]">Course Code:</span>
+                                <span className="font-semibold">{selectedSlot.slot.courseCode || '-'}</span>
+                            </div>
+                            <div className="slot-detail-field">
+                                <span className="font-bold min-w-[120px]">Timing:</span>
+                                <span className="font-semibold">{selectedSlot.slot.slotName || '-'}</span>
+                            </div>
+                            <div className="slot-detail-field">
+                                <span className="font-bold min-w-[120px]">Classroom:</span>
+                                <span className="font-semibold">Main Campus - TBD</span>
                             </div>
                         </div>
                     </div>
