@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { getCourseType } from '@/lib/course_codes_map';
@@ -239,8 +240,12 @@ export default function SavedPage() {
             if (selectedTT) setSelectedTT({ ...selectedTT, title: renameValue });
             setRenameOpen(false);
             showToast('Timetable renamed');
-        } catch (error: any) {
-            const detail = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
+        } catch (error: unknown) {
+            const detail = axios.isAxiosError(error)
+                ? error.response?.data?.detail || error.response?.data?.error || error.message
+                : error instanceof Error
+                    ? error.message
+                    : 'Unknown error';
             console.error('Rename error:', detail, error);
             showToast(`Failed to rename: ${detail}`);
         }
@@ -573,11 +578,12 @@ function TimetableDetailView({
     onRename: () => void;
     onDelete: () => void;
     onCopyLink: () => void;
-    session: any;
-    router: any;
+    session: Session | null;
+    router: ReturnType<typeof useRouter>;
     showToast: (msg: string) => void;
 }) {
-    const allCodes = tt.slots.map(s => s.courseCode);
+    const [isExporting, setIsExporting] = useState(false);
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
 
     type CellData = { code: string; courseName: string; facultyName: string; slot: string } | null;
     const theoryGrid: CellData[][] = Array.from({ length: 5 }, () => Array(13).fill(null));
@@ -605,6 +611,7 @@ function TimetableDetailView({
         courseMap.get(s.courseCode)!.slots.push(s.slot);
     });
     const courses = Array.from(courseMap.entries());
+    const exportCreditsLabel = 'TBD';
 
     const THEORY_TIME_LABELS = [
         '8:00am-\n8:50am', '8:55am-\n9:45am', '9:50am-\n10:40am', '10:45am-\n11:35am',
@@ -618,14 +625,19 @@ function TimetableDetailView({
     ];
     const LUNCH_LETTERS = ['L', 'U', 'N', 'C', 'H'];
 
-    const handleDownload = async () => {
+    const handleDownload = async (target: 'timetable' | 'slots') => {
         showToast('Preparing PDF...');
+        setIsExporting(true);
         try {
-            await exportToPDF('saved-timetable-grid', `${tt.title}.pdf`);
+            await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+            await exportToPDF(target === 'timetable' ? 'saved-timetable-grid' : 'saved-selected-courses-export-sheet', `${tt.title}${target === 'timetable' ? '' : ' - Selected Courses'}.pdf`);
             showToast('PDF downloaded successfully!');
         } catch (error) {
             console.error('PDF error:', error);
             showToast('Failed to generate PDF.');
+        } finally {
+            setIsExporting(false);
+            setShowDownloadModal(false);
         }
     };
 
@@ -687,7 +699,7 @@ function TimetableDetailView({
                                                     <td key={`t-${colIdx}`} className="dv-td dv-td-theory-filled">
                                                         <div className="dv-cell-slot">{theoryLabels[rowIdx]?.[colIdx]}</div>
                                                         <div className="dv-cell-code">{cell.code}</div>
-                                                        <div className="dv-cell-faculty">{cell.facultyName}</div>
+                                                        {isExporting && <div className="dv-cell-course">{cell.courseName}</div>}
                                                     </td>
                                                 ) : (
                                                     <td key={`t-${colIdx}`} className="dv-td dv-td-theory-empty">
@@ -704,7 +716,7 @@ function TimetableDetailView({
                                                     <td key={`t-${colIdx + 6}`} className="dv-td dv-td-theory-filled">
                                                         <div className="dv-cell-slot">{theoryLabels[rowIdx]?.[colIdx + 6]}</div>
                                                         <div className="dv-cell-code">{cell.code}</div>
-                                                        <div className="dv-cell-faculty">{cell.facultyName}</div>
+                                                        {isExporting && <div className="dv-cell-course">{cell.courseName}</div>}
                                                     </td>
                                                 ) : (
                                                     <td key={`t-${colIdx + 6}`} className="dv-td dv-td-theory-empty">
@@ -720,7 +732,7 @@ function TimetableDetailView({
                                                     <td key={`l-${colIdx}`} className="dv-td dv-td-lab-filled">
                                                         <div className="dv-cell-slot">{labLabels[rowIdx]?.[colIdx]}</div>
                                                         <div className="dv-cell-code">{cell.code}</div>
-                                                        <div className="dv-cell-faculty">{cell.facultyName}</div>
+                                                        {isExporting && <div className="dv-cell-course">{cell.courseName}</div>}
                                                     </td>
                                                 ) : (
                                                     <td key={`l-${colIdx}`} className="dv-td dv-td-lab-empty">
@@ -734,7 +746,7 @@ function TimetableDetailView({
                                                     <td key={`l-${colIdx + 6}`} className="dv-td dv-td-lab-filled">
                                                         <div className="dv-cell-slot">{labLabels[rowIdx]?.[colIdx + 6]}</div>
                                                         <div className="dv-cell-code">{cell.code}</div>
-                                                        <div className="dv-cell-faculty">{cell.facultyName}</div>
+                                                        {isExporting && <div className="dv-cell-course">{cell.courseName}</div>}
                                                     </td>
                                                 ) : (
                                                     <td key={`l-${colIdx + 6}`} className="dv-td dv-td-lab-empty">
@@ -761,7 +773,7 @@ function TimetableDetailView({
                             </svg>
                             Copy Link
                         </button>
-                        <button className="dv-download-btn" onClick={handleDownload} title="Download as PDF">
+                        <button className="dv-download-btn" onClick={() => setShowDownloadModal(true)} title="Download as PDF">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                             Download
                         </button>
@@ -771,7 +783,7 @@ function TimetableDetailView({
                 {/* Selected Courses */}
                 <div className="dv-courses-box">
                     <h2 className="dv-courses-title">Selected Courses</h2>
-                    <table className="dv-courses-table">
+                    <table className="dv-courses-table" id="saved-selected-courses-export">
                         <thead>
                             <tr>
                                 <th>Slot</th>
@@ -795,6 +807,59 @@ function TimetableDetailView({
                     </table>
                 </div>
             </div>
+
+            <div className="pointer-events-none fixed left-[-10000px] top-[-10000px]" aria-hidden="true">
+                <div id="saved-selected-courses-export-sheet" style={{ width: 1200, background: '#F8E8D2', padding: 48 }}>
+                    <div style={{ borderRadius: 36, border: '1px solid #d9d9d9', background: '#fff', paddingLeft: 40, paddingRight: 40, paddingTop: 32, paddingBottom: 40, boxShadow: '0 12px 40px rgba(0,0,0,0.04)' }}>
+                        <h2 style={{ marginTop: 0, marginBottom: 56, textAlign: 'center', fontSize: 30, lineHeight: 1.2, fontWeight: 900, color: '#000' }}>{tt.title}</h2>
+                        <div style={{ overflow: 'hidden', borderTop: '1px solid #2c2c2c', borderBottom: '1px solid #2c2c2c', background: '#fff' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
+                                <thead style={{ background: '#D9EBE5' }}>
+                                    <tr>
+                                        <th style={{ width: '15%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Slot</th>
+                                        <th style={{ width: '18%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Course Code</th>
+                                        <th style={{ width: '32%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Course Title</th>
+                                        <th style={{ width: '18%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Faculty</th>
+                                        <th style={{ width: '9%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Venue</th>
+                                        <th style={{ width: '8%', padding: '16px 20px', fontSize: 17, fontWeight: 900 }}>Credits</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {courses.map(([code, info]) => (
+                                        <tr key={code} style={{ borderTop: '1px solid #2c2c2c' }}>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500, whiteSpace: 'pre-wrap' }}>{info.slots.join('\n')}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500 }}>{code}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500 }}>{info.courseName}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500 }}>{info.facultyName}</td>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500 }}>TBD</td>
+                                            <td style={{ padding: '16px 20px', fontSize: 16, fontWeight: 500 }}>TBD</td>
+                                        </tr>
+                                    ))}
+                                    <tr style={{ borderTop: '1px solid #2c2c2c', background: '#E7E7E7' }}>
+                                        <td colSpan={6} style={{ padding: '16px 20px', textAlign: 'center', fontSize: 18, fontWeight: 900 }}>
+                                            Total Credits: {exportCreditsLabel}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {showDownloadModal && (
+                <div className="modal-backdrop" onClick={() => setShowDownloadModal(false)}>
+                    <div className="modal-box" onClick={e => e.stopPropagation()}>
+                        <h3 className="modal-title">Download PDF</h3>
+                        <p className="modal-desc">Choose what you want to download</p>
+                        <div className="modal-btns" style={{ justifyContent: 'stretch', flexDirection: 'column' }}>
+                            <button onClick={() => handleDownload('timetable')} className="modal-btn-confirm modal-btn-purple">Timetable</button>
+                            <button onClick={() => handleDownload('slots')} className="modal-btn-confirm" style={{ background: '#CFE3FF', color: '#111827' }}>Selected Courses</button>
+                            <button onClick={() => setShowDownloadModal(false)} className="modal-btn-cancel">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Bottom nav — same as list view */}
             <div className="bottom-nav">

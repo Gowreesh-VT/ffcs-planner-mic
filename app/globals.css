@@ -83,7 +83,8 @@ body {
 
 .slot-detail-backdrop {
   background: rgba(5, 5, 5, 0.3);
-  backdrop-filter: blur(3px);
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
 }
 
 .slot-detail-overlay {
@@ -91,39 +92,42 @@ body {
 }
 
 .slot-detail-dialog {
-  width: min(92vw, 400px);
-  min-height: 320px;
-  border-radius: 16px;
-  border: 4px solid #00A3FF;
-  background: #FFF9C4; /* Solid light yellow background */
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  width: min(92vw, 335px);
+  height: 312px;
+  border-radius: 12px;
+  border: 1.5px solid #8F8443;
+  background: #FFF0A6;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
+  padding: 22px 20px;
 }
 
 .slot-detail-close {
   line-height: 1;
-  font-size: 32px;
+  font-size: 24px;
   top: 12px;
-  right: 16px;
+  right: 12px;
 }
 
 .slot-detail-field {
   display: flex;
   justify-content: flex-start;
-  gap: 12px;
-  align-items: baseline;
-  padding: 4px 0;
+  gap: 0;
+  align-items: flex-start;
+  padding: 0;
+  border-bottom: 0;
 }
 
 @media (max-width: 640px) {
   .slot-detail-dialog {
     width: min(92vw, 335px);
-    min-height: 312px;
+    height: 312px;
+    padding: 22px 18px;
   }
 
   .slot-detail-field {
-    grid-template-columns: 1fr;
-    gap: 2px;
+    flex-direction: row;
+    gap: 0;
   }
 }
