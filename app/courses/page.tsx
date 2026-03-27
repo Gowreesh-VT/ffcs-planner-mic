@@ -508,30 +508,30 @@ export default function CoursesPage() {
                         )}
 
                         <div className="px-6 py-4 flex items-center justify-between border-t border-[#ededed] bg-[#fcfcfc] shrink-0">
-                            
+
                             <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 bg-[#f2e6b5] rounded-xl px-3 py-2 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
-                            <span className="text-sm font-semibold text-[#1f1f1f]">All subjects mode</span>
-                            <button
-                                type="button"
-                                onClick={() => setIsHelpOpen(true)}
-                                className="w-7 h-7 rounded-full bg-[#e6c44c] text-[#1f1f1f] font-bold text-sm shadow-inner grid place-items-center hover:brightness-95 transition"
-                                aria-label="All subjects mode info"
-                            >
-                                ?
-                            </button>
-                            <label className="relative inline-flex items-center cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={allSubjectsMode}
-                                    onChange={(e) => setAllSubjectsMode(e.target.checked)}
-                                />
-                                <div className="w-12 h-7 bg-white border border-[#d8d1a3] rounded-full peer-checked:bg-[#e6c44c] transition-colors duration-200"></div>
-                                <div className="absolute left-[4px] top-[4px] w-5 h-5 bg-[#d8d1a3] rounded-full transition-all duration-200 peer-checked:translate-x-[20px] peer-checked:bg-white" />
-                            </label>
-                        </div>
-                    </div><button
+                                <div className="flex items-center gap-2 bg-[#f2e6b5] rounded-xl px-3 py-2 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                                    <span className="text-sm font-semibold text-[#1f1f1f]">All subjects mode</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsHelpOpen(true)}
+                                        className="w-7 h-7 rounded-full bg-[#e6c44c] text-[#1f1f1f] font-bold text-sm shadow-inner grid place-items-center hover:brightness-95 transition"
+                                        aria-label="All subjects mode info"
+                                    >
+                                        ?
+                                    </button>
+                                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={allSubjectsMode}
+                                            onChange={(e) => setAllSubjectsMode(e.target.checked)}
+                                        />
+                                        <div className="w-12 h-7 bg-white border border-[#d8d1a3] rounded-full peer-checked:bg-[#e6c44c] transition-colors duration-200"></div>
+                                        <div className="absolute left-[4px] top-[4px] w-5 h-5 bg-[#d8d1a3] rounded-full transition-all duration-200 peer-checked:translate-x-[20px] peer-checked:bg-white" />
+                                    </label>
+                                </div>
+                            </div><button
                                 onClick={handleRemoveAll}
                                 className="flex items-center gap-2 text-sm font-semibold text-[#c9302c] bg-white border border-[#e9b3b0] rounded-full px-4 py-2 shadow-[0_3px_8px_rgba(0,0,0,0.08)] hover:bg-[#fff5f5] transition cursor-pointer"
                             >
@@ -545,7 +545,7 @@ export default function CoursesPage() {
                     </div>
                 </div>
             </div>
-            
+
 
             {/* Bottom Navigation */}
             <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
@@ -575,11 +575,10 @@ export default function CoursesPage() {
                                     if (num === 3) syncAndOpenTimetable();
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
-                                    num === 2
+                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${num === 2
                                         ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
                                         : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
-                                }`}
+                                    }`}
                             >
                                 {num === 2 ? '2. Courses' : num}
                             </button>
@@ -614,35 +613,32 @@ export default function CoursesPage() {
 
             {isHelpOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setIsHelpOpen(false)}></div>
-                    <div className="relative w-[92%] max-w-[520px] bg-[#f1e4a2] border-[4px] border-black rounded-[18px] shadow-[0_16px_32px_rgba(0,0,0,0.35)] overflow-hidden">
-                        <div className="flex items-center gap-2 px-4 py-3 border-b-[3px] border-black bg-[#f1e4a2]">
-                            <span className="flex gap-2">
-                                <span className="w-3 h-3 rounded-full bg-[#d4b047]"></span>
-                                <span className="w-3 h-3 rounded-full bg-[#c27b3f]"></span>
-                                <span className="w-3 h-3 rounded-full bg-[#c8c05c]"></span>
-                            </span>
-                            <div className="flex-1 text-center text-lg font-bold text-[#1f1f1f]">Alert</div>
-                            <span className="w-10" aria-hidden="true"></span>
+                    <div className="absolute inset-0 bg-black/35" onClick={() => setIsHelpOpen(false)}></div>
+                    <div className="relative w-[92%] max-w-[448px] bg-[#f4edcf] rounded-[4px] shadow-[0_16px_34px_rgba(0,0,0,0.20)] overflow-hidden">
+                        <div className="px-8 py-2 bg-[#f1e7b8] border-b-[4px] border-[#7c6f1f]">
+                            <div className="text-[17px] leading-none font-bold text-black">Alert</div>
                         </div>
-                        <div className="px-6 sm:px-8 py-7 text-center text-[#1f1f1f]">
-                            <div className="space-y-6 text-base leading-relaxed font-semibold">
-                                <div>
-                                    <div className="font-extrabold">All Subjects Mode - ON</div>
-                                    <div className="font-normal mt-2">Generated timetables strictly include all of the selected subjects.</div>
+                        <div className="px-8 py-7 text-left text-[#1f1f1f]">
+                            <div className="space-y-5 text-[16px] leading-[1.34] font-normal">
+                                <div className="space-y-1">
+                                    <div className="font-extrabold text-[17px] leading-[1.2]">All Subjects Mode - ON</div>
+                                    <div className="mb-4">Generated timetables strictly include all of the selected subjects.</div>
                                 </div>
-                                <div>
-                                    <div className="font-extrabold">All Subjects Mode - OFF</div>
-                                    <div className="font-normal mt-2">Subjects are prioritized based on their order. If a clash is detected then the subject with lower priority is excluded.</div>
+                                <br></br>
+                                <div className="space-y-1">
+                                    <div className="font-extrabold text-[17px] leading-[1.2]">All Subjects Mode - OFF</div>
+                                    <div>Subjects are prioritized based on their order. If a clash is detected then the subject with lower priority is excluded.</div>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsHelpOpen(false)}
-                                className="mt-8 inline-flex items-center justify-center px-8 py-2.5 bg-[#f0d86f] border-[3px] border-black rounded-[12px] text-base font-bold text-[#1f1f1f] shadow-[0_6px_0px_rgba(0,0,0,0.18)] hover:translate-y-[1px] hover:shadow-[0_4px_0px_rgba(0,0,0,0.18)] transition"
-                            >
-                                OK
-                            </button>
+                            <div className="pt-6 text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsHelpOpen(false)}
+                                    className="inline-flex min-w-[86px] items-center justify-center px-7 py-2 bg-[#f0df93] rounded-[5px] text-[14px] leading-none font-semibold text-[#1f1f1f] hover:brightness-95 transition"
+                                >
+                                    OK
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
