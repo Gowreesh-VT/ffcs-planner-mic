@@ -352,7 +352,7 @@ export default function TimetablePage() {
                             <tr className="border-b-[2px] border-white h-[30px]">
                                 <th className="p-0.5 text-center text-[9px] leading-tight font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-0.5 text-center text-[7px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
+                                    <th key={i} className={`p-0.5 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
                                         {t.theory ? t.theory.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
@@ -362,7 +362,7 @@ export default function TimetablePage() {
                             <tr className="border-b-[2px] border-white h-[30px]">
                                 <th className="p-0.5 text-center text-[9px] leading-tight font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-0.5 text-center text-[7px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
+                                    <th key={i} className={`p-0.5 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
                                         {t.lab ? t.lab.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}

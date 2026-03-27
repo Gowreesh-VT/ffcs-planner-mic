@@ -820,9 +820,10 @@ export default function PreferencesPage() {
                 {/* RIGHT - ACTION BOX */}
                 <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                     <button
-                        onClick={() => setCookie('editingTimetableId', '', -1)}
-                        disabled={currentStep === 1}
-                        style={{ opacity: currentStep === 1 ? 0.4 : 1, cursor: currentStep === 1 ? 'not-allowed' : 'pointer' }}
+                        onClick={() => {
+                            deleteCookie('editingTimetableId');
+                            router.push('/');
+                        }}
                         className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200"
                     >
                         Previous

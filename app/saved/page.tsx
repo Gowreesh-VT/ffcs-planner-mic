@@ -186,7 +186,7 @@ export default function SavedPage() {
             setSelectedTT(null);
             return;
         }
-        router.push('/saved');
+        router.push('/timetable');
     };
 
     /* ── Handlers ── */
