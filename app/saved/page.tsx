@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import Image from 'next/image';
 import { getCourseType } from '@/lib/course_codes_map';
 import { fullCourseData } from '@/lib/type';
 import { useTimetable } from '@/lib/TimeTableContext';
 import { exportToPDF } from '@/lib/exportToPDF';
+import Image from 'next/image';
 import './saved.css';
 
 
@@ -180,6 +180,15 @@ export default function SavedPage() {
         setTimeout(() => setToast(''), 3000);
     }, []);
 
+    const handlePrevious = () => {
+        if (viewMode === 'view') {
+            setViewMode('list');
+            setSelectedTT(null);
+            return;
+        }
+        router.push('/timetable');
+    };
+
     /* ── Handlers ── */
     function handleEdit(tt: TimetableEntry) {
         if (tt._id.startsWith('mock')) return;
@@ -235,17 +244,6 @@ export default function SavedPage() {
             console.error('Rename error:', detail, error);
             showToast(`Failed to rename: ${detail}`);
         }
-    }
-
-    async function handleTogglePublic() {
-        if (!selectedTT) return;
-        const newState = !selectedTT.isPublic;
-        await axios.patch(`/api/timetables/${selectedTT._id}`, { isPublic: newState });
-        setTimetables(prev =>
-            (prev ?? []).map(t => (t._id === selectedTT._id ? { ...t, isPublic: newState } : t))
-        );
-        setSelectedTT({ ...selectedTT, isPublic: newState });
-        showToast(newState ? 'Timetable is now public' : 'Timetable is now private');
     }
 
     async function copyToClipboard(text: string): Promise<boolean> {
@@ -306,7 +304,7 @@ export default function SavedPage() {
                 <>
                     {/* Main content */}
                     <div className="main-content">
-                        <h1 className="page-title" style={{ marginBottom: '1rem', marginLeft: '2rem' }}>View Your Saved Timetable</h1>
+                        <h1 className="page-title">View Your Saved Timetable</h1>
 
                         <div className="cards-outer">
                             {loading ? (
@@ -368,7 +366,7 @@ export default function SavedPage() {
 
                     {/* Bottom nav bar */}
                     <div className="bottom-nav">
-                        <div className="user-section">
+                        <div className="bottom-nav-box user-section">
                             <div className="avatar">
                                 {session?.user?.image
                                     ? <Image src={session.user.image} alt="avatar" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} unoptimized referrerPolicy="no-referrer" />
@@ -377,26 +375,28 @@ export default function SavedPage() {
                             <span className="user-name">{session?.user?.name || 'Guest'}</span>
                         </div>
 
-                        <div className="step-pills">
-                            {[1, 2, 3, 4].map(n => (
-                                <button
-                                    key={n}
-                                    onClick={() => {
-                                        if (n === 1) router.push('/preferences');
-                                        if (n === 2) router.push('/courses');
-                                        if (n === 3) router.push('/timetable');
-                                        if (n === 4) router.push('/saved');
-                                    }}
-                                    className={n === 4 ? 'step-pill-saved' : 'step-pill'}
-                                >
-                                    {n === 4 ? '4. Saved' : n}
-                                </button>
-                            ))}
+                        <div className="bottom-nav-box step-pills-container">
+                            <div className="step-pills">
+                                {[1, 2, 3, 4].map(n => (
+                                    <button
+                                        key={n}
+                                        onClick={() => {
+                                            if (n === 1) router.push('/preferences');
+                                            if (n === 2) router.push('/courses');
+                                            if (n === 3) router.push('/timetable');
+                                            if (n === 4) router.push('/saved');
+                                        }}
+                                        className={n === 4 ? 'step-pill-saved' : 'step-pill'}
+                                    >
+                                        {n === 4 ? '4. Saved' : n}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="nav-btns">
-                            <button onClick={() => router.back()} className="btn-prev">Previous</button>
-                            <button disabled className="btn-next" style={{ opacity: 0.4, cursor: 'not-allowed' }}>Next</button>
+                            <button onClick={handlePrevious} className="btn-prev">Previous</button>
+                            <button disabled className="btn-next">Next</button>
                         </div>
                     </div>
                 </>
@@ -407,7 +407,6 @@ export default function SavedPage() {
                     onRename={() => { setRenameValue(selectedTT.title); setRenameOpen(true); }}
                     onDelete={() => setDeleteOpen(true)}
                     onCopyLink={handleCopyLink}
-                    onTogglePublic={handleTogglePublic}
                     session={session}
                     router={router}
                     showToast={showToast}
@@ -504,35 +503,41 @@ function TimetableCard({
 
     return (
         <div className="tt-card" style={{ backgroundColor: bgColor }}>
-            {/* Top icons */}
-            <div className="card-icons-top">
-                <button onClick={e => { e.stopPropagation(); onRename(); }} className="card-icon-btn" title="Rename">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.8">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                </button>
-                <button onClick={e => { e.stopPropagation(); onDelete(); }} className="card-icon-btn card-icon-btn-delete" title="Delete">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="1.8">
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                    </svg>
-                </button>
-            </div>
+            <div className="mini-grid-container">
+                {/* Top icons over grid */}
+                <div className="card-icons-top">
+                    <button onClick={e => { e.stopPropagation(); onRename(); }} className="card-icon-btn" title="Rename">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="12" height="16" rx="2" ry="2"></rect>
+                            <path d="M6 15l3-6 3 6"></path>
+                            <path d="M7 13h4"></path>
+                            <path d="M19 4v16"></path>
+                            <path d="M17 4h4"></path>
+                            <path d="M17 20h4"></path>
+                        </svg>
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); onDelete(); }} className="card-icon-btn card-icon-btn-delete" title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                    </button>
+                </div>
 
-            {/* Mini grid */}
-            <div className="mini-grid">
-                <div className="mini-grid-rows">
-                    {gridRows.map((row, rowIdx) => (
-                        <div key={rowIdx} className="mini-grid-row">
-                            {row.map((cell, colIdx) => (
-                                <div
-                                    key={colIdx}
-                                    className="mini-grid-cell"
-                                    style={{ backgroundColor: cell ? getSlotColor(cell, allCodes) : 'rgba(0,0,0,0.06)' }}
-                                />
-                            ))}
-                        </div>
-                    ))}
+                {/* Mini grid */}
+                <div className="mini-grid">
+                    <div className="mini-grid-rows">
+                        {gridRows.map((row, rowIdx) => (
+                            <div key={rowIdx} className="mini-grid-row">
+                                {row.map((cell, colIdx) => (
+                                    <div
+                                        key={colIdx}
+                                        className="mini-grid-cell"
+                                        style={{ backgroundColor: cell ? getSlotColor(cell, allCodes) : 'rgba(0,0,0,0.06)' }}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -559,7 +564,6 @@ function TimetableDetailView({
     onDelete,
     onCopyLink,
     onRename,
-    onTogglePublic,
     session,
     router,
     showToast,
@@ -569,7 +573,6 @@ function TimetableDetailView({
     onRename: () => void;
     onDelete: () => void;
     onCopyLink: () => void;
-    onTogglePublic: () => void;
     session: any;
     router: any;
     showToast: (msg: string) => void;
@@ -747,37 +750,19 @@ function TimetableDetailView({
                     </div>
                     {/* Share / Download buttons */}
                     <div className="dv-grid-actions">
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                                className={tt.isPublic ? 'dv-share-active-btn' : 'dv-share-btn'}
-                                onClick={onTogglePublic}
-                                title={tt.isPublic ? "Unshare Timetable" : "Share Timetable"}
-                            >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="18" cy="5" r="3" />
-                                    <circle cx="6" cy="12" r="3" />
-                                    <circle cx="18" cy="19" r="3" />
-                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                                </svg>
-                                {tt.isPublic ? 'Shared (Public)' : 'Share'}
-                            </button>
-                            {tt.isPublic && (
-                                <button
-                                    className="dv-share-btn"
-                                    onClick={onCopyLink}
-                                    title="Copy Public Link"
-                                >
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                    </svg>
-                                    Copy Link
-                                </button>
-                            )}
-                        </div>
-                        <button className="dv-download-btn" onClick={handleDownload} >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                        <button
+                            className="dv-share-btn"
+                            onClick={onCopyLink}
+                            title="Copy Public Link"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                            Copy Link
+                        </button>
+                        <button className="dv-download-btn" onClick={handleDownload} title="Download as PDF">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                             Download
                         </button>
                     </div>
@@ -799,7 +784,7 @@ function TimetableDetailView({
                         <tbody>
                             {courses.map(([code, info]) => (
                                 <tr key={code} className="dv-course-row">
-                                    <td>{info.slots.join(', ')}</td>
+                                    <td style={{ whiteSpace: 'pre-wrap' }}>{info.slots.join('\n')}</td>
                                     <td>{code}</td>
                                     <td>{info.courseName}</td>
                                     <td>{info.facultyName}</td>
@@ -813,33 +798,35 @@ function TimetableDetailView({
 
             {/* Bottom nav — same as list view */}
             <div className="bottom-nav">
-                <div className="user-section">
+                <div className="bottom-nav-box user-section">
                     <div className="avatar">
                         {session?.user?.image
-                            ? <Image src={session.user.image} alt="avatar" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} unoptimized referrerPolicy="no-referrer" />
+                            ? <img src={session.user.image} alt="avatar" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} referrerPolicy="no-referrer" />
                             : (session?.user?.name?.[0] || '?')}
                     </div>
                     <span className="user-name">{session?.user?.name || 'Guest'}</span>
                 </div>
-                <div className="step-pills">
-                    {[1, 2, 3, 4].map(n => (
-                        <button
-                            key={n}
-                            onClick={() => {
-                                if (n === 1) router.push('/preferences');
-                                if (n === 2) router.push('/courses');
-                                if (n === 3) router.push('/timetable');
-                                if (n === 4) router.push('/saved');
-                            }}
-                            className={n === 4 ? 'step-pill-saved' : 'step-pill'}
-                        >
-                            {n === 4 ? '4. Saved' : n}
-                        </button>
-                    ))}
+                <div className="bottom-nav-box step-pills-container">
+                    <div className="step-pills">
+                        {[1, 2, 3, 4].map(n => (
+                            <button
+                                key={n}
+                                onClick={() => {
+                                    if (n === 1) router.push('/preferences');
+                                    if (n === 2) router.push('/courses');
+                                    if (n === 3) router.push('/timetable');
+                                    if (n === 4) router.push('/saved');
+                                }}
+                                className={n === 4 ? 'step-pill-saved' : 'step-pill'}
+                            >
+                                {n === 4 ? '4. Saved' : n}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <div className="nav-btns">
-                    <button onClick={() => router.push('/timetable')} className="btn-prev">Previous</button>
-                    <button disabled className="btn-next" style={{ opacity: 0.4, cursor: 'not-allowed' }}>Next</button>
+                    <button onClick={onBack} className="btn-prev">Previous</button>
+                    <button disabled className="btn-next">Next</button>
                 </div>
             </div>
         </div>

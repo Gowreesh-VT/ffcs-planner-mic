@@ -10,7 +10,6 @@ import { generateTT } from '@/lib/utils';
 import { getSlotViewPayload } from '@/lib/slot-view';
 import { fullCourseData, timetableDisplayData } from '@/lib/type';
 import { clearPlannerClientCache } from '@/lib/clientCache';
-import LoginModal from '@/components/loginPopup';
 
 const setCookie = (name: string, value: string) => {
     if (typeof document === 'undefined') return;
@@ -55,7 +54,6 @@ export default function TimetablePage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [timetableTitle, setTimetableTitle] = useState('My Schedule');
-    const [showLoginModal, setShowLoginModal] = useState(false);
 
     const { scheduleRows, leftTimes, rightTimes } = useMemo(() => getSlotViewPayload(), []);
 
@@ -69,7 +67,7 @@ export default function TimetablePage() {
 
 
         if (!timetableData || timetableData.length === 0) {
-            const savedCoursesRaw = getCookie('preferenceCourses');
+            const savedCoursesRaw = getCookie('generatedTimetableCourses') || getCookie('preferenceCourses');
             if (savedCoursesRaw) {
                 try {
                     setIsGenerating(true);
@@ -97,7 +95,7 @@ export default function TimetablePage() {
 
     const handleSave = async (customTitle?: string, options?: { skipRedirect?: boolean }) => {
         if (!session?.user?.email) {
-            setShowLoginModal(true);
+            showToast('Please sign in to save or share your timetable.');
             return null;
         }
         if (isSaving || currentTT.length === 0) return null;
@@ -154,10 +152,9 @@ export default function TimetablePage() {
                     return res.data.timetable;
                 }
             }
-        } catch (error: any) {
-            const detail = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
-            console.error('Save error:', detail, error);
-            showToast(`Failed to save: ${detail}`);
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('Failed to save timetable.');
         } finally {
             setIsSaving(false);
         }
@@ -213,7 +210,8 @@ export default function TimetablePage() {
     const handleShare = async () => {
         console.log('handleShare called!');
         if (!session?.user?.email) {
-            setShowLoginModal(true);
+            window.alert('Please sign in to share your timetable.');
+            showToast('Please sign in to share your timetable.');
             return;
         }
         if (currentTT.length === 0) {
@@ -273,9 +271,9 @@ export default function TimetablePage() {
                 window.prompt('Copy this share link:', url);
             }
         } catch (error: any) {
-            const detail = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
-            console.error('Share error:', detail, error);
-            showToast(`Failed to share: ${detail}`);
+            console.error('Share error:', error);
+            window.alert('Share Error: ' + (error?.message || String(error)));
+            showToast('Failed to share timetable. Please try again.');
         }
     };
 
@@ -329,7 +327,7 @@ export default function TimetablePage() {
     }
 
     return (
-        <div className="h-screen bg-[#F5E6D3] font-sans flex flex-col justify-between overflow-hidden items-center">
+        <div className="h-screen bg-[#F5E6D3] font-sans overflow-hidden">
             {/* Toast */}
             {toast && (
                 <div className="fixed top-8 right-8 z-[100] bg-[#1a1a2e] text-white px-8 py-4 rounded-2xl shadow-2xl text-[14px] font-bold animate-[slideIn_0.3s_ease] border border-white/10">
@@ -337,31 +335,34 @@ export default function TimetablePage() {
                 </div>
             )}
 
-
-            <div className="w-[98%] max-w-[1800px] flex-1 min-h-0 flex flex-col bg-[#FFFBF0] rounded-[32px] p-[clamp(16px,2vw,32px)] my-[clamp(12px,2vh,32px)] pb-4 shadow-sm mx-auto">
-                <div className="flex items-center gap-4 pb-4 ml-2 shrink-0">
-                    <h1 className="text-[26px] font-bold text-black">Timetables Generated</h1>
+            <div className="h-full px-[clamp(12px,1.5vw,24px)] pt-[clamp(10px,1vh,18px)] pb-[116px]">
+            <div className="w-full max-w-[1800px] h-full mx-auto flex flex-col min-h-0">
+                <div className="flex items-center gap-4 px-2 pt-[18px] pb-2 shrink-0">
+                    <h1 className="text-[24px] font-bold text-black">Timetables Generated</h1>
 
                 </div>
 
                 {/* Main Table Container */}
-                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-auto border border-white flex-1 min-h-0 custom-scrollbar" id="timetable-grid">
-                    <div id="rat"> <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-[16px]">
-                        <thead>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
+                <div className="bg-white rounded-[18px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 min-h-0 overflow-hidden flex flex-col p-3" id="timetable-grid">
+                    
+                    <div id="rat" className="flex-1 min-h-0 overflow-hidden rounded-[14px] border border-[#f1f1f1]">
+                    <div className="h-full overflow-hidden">
+                    <table className="w-full h-full table-fixed border-collapse bg-white text-center min-w-full">
+                        <thead className="h-[48px]">
+                            <tr className="border-b-[2px] border-white h-[30px]">
+                                <th className="p-0.5 text-center text-[9px] leading-tight font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Theory Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-0.5 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
                                         {t.theory ? t.theory.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
                                     </th>
                                 ))}
                             </tr>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
+                            <tr className="border-b-[2px] border-white h-[30px]">
+                                <th className="p-0.5 text-center text-[9px] leading-tight font-bold text-black border-r-[2px] border-white bg-white w-[5vw]">Lab Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-0.5 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[24px] px-0' : 'min-w-[50px]'}`}>
                                         {t.lab ? t.lab.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
@@ -371,16 +372,16 @@ export default function TimetablePage() {
                         </thead>
                         <tbody className="bg-white">
                             {scheduleRows.map((row, rowIdx) => (
-                                <tr key={row.day} className="group border-b-[2px] border-white">
-                                    <td className="p-0 text-[11px] font-bold text-black text-center align-middle w-[5vw] border-r-[2px] border-white bg-white">{row.day}</td>
+                                <tr key={row.day} className="group h-[68px]">
+                                    <td className="p-0 text-[9px] font-bold text-black text-center align-middle w-[5vw] border-r-[2px] border-white bg-white">{row.day}</td>
                                     {Array.from({ length: 13 }).map((_, colIdx) => {
                                         if (colIdx === 6) {
                                             // Space for Lunch
                                             const lunchLetters = ['L', 'U', 'N', 'C', 'H'];
                                             return (
-                                                <td key="lunch-spacer" className="w-[30px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
-                                                    <div className="flex flex-col items-center justify-center h-full py-1">
-                                                        <span className="text-[11px] font-black text-black opacity-80">
+                                                <td key="lunch-spacer" className="w-[24px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
+                                                    <div className="flex h-full flex-col items-center justify-center">
+                                                        <span className="text-[9px] font-black text-black opacity-80">
                                                             {lunchLetters[rowIdx]}
                                                         </span>
                                                     </div>
@@ -404,10 +405,10 @@ export default function TimetablePage() {
 
                                         return (
                                             <td key={colIdx} className="align-top border-r-[2px] border-white p-0 bg-white">
-                                                <div className="flex flex-col h-full w-full">
+                                                <div className="grid h-[68px] w-full grid-rows-2 gap-0">
                                                     {/* Theory Slot */}
                                                     <div
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${theoryCell ? 'z-10' : ''}`}
+                                                        className={`flex h-full flex-col items-center justify-center py-0 transition-all cursor-pointer ${theoryCell ? 'z-10' : ''}`}
                                                         style={{
                                                             backgroundColor: theoryCell ? getSlotColor(theoryCell.courseCode, allCodes) : '#e6f9ed',
                                                         }}
@@ -415,20 +416,17 @@ export default function TimetablePage() {
                                                     >
                                                         {theoryCell ? (
                                                             <>
-                                                                <span className="text-[10px] font-bold text-black leading-tight">{theoryLabel}</span>
-                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{theoryCell.courseCode}</span>
+                                                                <span className="text-[8px] font-bold text-black leading-tight">{theoryLabel}</span>
+                                                                <span className="text-[6px] font-bold text-black opacity-80 uppercase truncate px-1 max-w-[52px] leading-tight">{theoryCell.courseCode}</span>
                                                             </>
                                                         ) : (
-                                                            <span className="text-[10px] font-bold text-[#4ea075]">{theoryLabel}</span>
+                                                            <span className="text-[8px] font-bold text-[#4ea075]">{theoryLabel}</span>
                                                         )}
                                                     </div>
 
-                                                    {/* White separator between Theory and Lab */}
-                                                    <div className="h-[2px] w-full bg-white flex-shrink-0" />
-
                                                     {/* Lab Slot */}
                                                     <div
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[36px] py-[2px] transition-all cursor-pointer ${labCell ? 'z-10' : ''}`}
+                                                        className={`flex h-full flex-col items-center justify-center py-0 transition-all cursor-pointer ${labCell ? 'z-10' : ''}`}
                                                         style={{
                                                             backgroundColor: labCell ? getSlotColor(labCell.courseCode, allCodes) : '#fff6e0',
                                                         }}
@@ -436,11 +434,11 @@ export default function TimetablePage() {
                                                     >
                                                         {labCell ? (
                                                             <>
-                                                                <span className="text-[10px] font-bold text-black leading-tight">{labLabel}</span>
-                                                                <span className="text-[7.5px] font-bold text-black opacity-80 uppercase mt-[1px] truncate px-1 max-w-[65px] leading-tight">{labCell.courseCode}</span>
+                                                                <span className="text-[8px] font-bold text-black leading-tight">{labLabel}</span>
+                                                                <span className="text-[6px] font-bold text-black opacity-80 uppercase truncate px-1 max-w-[52px] leading-tight">{labCell.courseCode}</span>
                                                             </>
                                                         ) : (
-                                                            <span className="text-[10px] font-bold text-[#d4a044]">{labLabel}</span>
+                                                            <span className="text-[8px] font-bold text-[#d4a044]">{labLabel}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -452,9 +450,11 @@ export default function TimetablePage() {
                         </tbody>
                     </table>
                     </div>
-                    {/* Pagination & Action Controls */}
-                    <div className="flex flex-wrap items-center justify-between p-3 py-2 mt-auto mb-1 gap-3 shrink-0">
-                        {/* Pagination */}
+                    </div>
+
+                {/* Pagination & Action Controls */}
+                <div className="flex flex-wrap items-center justify-between pt-2 mt-2 gap-3 shrink-0 w-full border-t border-[#f2ede3]">
+                    {/* Pagination */}
                         <div className="flex items-center gap-1 bg-[#A0C4FF]/80 p-2 rounded-xl shadow-sm">
                             <button
                                 onClick={() => setCurrentIndex(0)}
@@ -487,7 +487,7 @@ export default function TimetablePage() {
                         </div>
 
                         {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center justify-end gap-3">
                             <button
                                 onClick={handleShare}
                                 className="flex items-center gap-2 bg-[#A0C4FF] hover:bg-[#8ab2f2] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
@@ -503,13 +503,7 @@ export default function TimetablePage() {
                                 Download
                             </button>
                             <button
-                                onClick={() => {
-                                    if (!session?.user?.email) {
-                                        setShowLoginModal(true);
-                                        return;
-                                    }
-                                    setShowSaveModal(true);
-                                }}
+                                onClick={() => setShowSaveModal(true)}
                                 disabled={isSaving}
                                 className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
                             >
@@ -520,20 +514,27 @@ export default function TimetablePage() {
                     </div>
                 </div>
             </div>
+            </div>
 
             {/* Bottom Navigation */}
-            <div className="bg-white border-t border-gray-300 py-4 px-[clamp(16px,2vw,32px)] shadow-lg animate-lucid-fade-up-delayed w-full mt-auto shrink-0">
-                <div className="flex flex-wrap items-center justify-between max-w-[1800px] mx-[1%] lg:mx-auto gap-3">
-                    <div className="flex items-center gap-3">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
+                <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
+                    {/* LEFT - USER BOX */}
+                    <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                         {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
+                            <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
                         ) : (
-                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                            <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                                {session?.user?.name?.[0] || "?"}
+                            </div>
                         )}
-                        <span className="text-gray-700 text-sm font-semibold">{session?.user?.name || "Guest"}</span>
+                        <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                            {session?.user?.name || "Guest"}
+                        </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* CENTER - STEPS BOX */}
+                    <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
                         {[1, 2, 3, 4].map((num) => (
                             <button
                                 key={num}
@@ -543,31 +544,28 @@ export default function TimetablePage() {
                                     if (num === 3) router.push('/timetable');
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`px-5 py-2 rounded-lg font-semibold text-sm cursor-pointer ${num === 3 ? 'bg-[#A0C4FF] text-black' : 'bg-[#A0C4FF]/40 text-gray-700'}`}
+                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                                    num === 3
+                                        ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
+                                        : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                                }`}
                             >
                                 {num === 3 ? '3. Timetable' : num}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* RIGHT - ACTION BOX */}
+                    <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                         <button
-                            onClick={() => {
-                                router.back();
-                            }}
-                            className="px-8 py-2.5 border-2 border-gray-400 rounded-lg font-semibold text-sm hover:bg-gray-50 text-black transition cursor-pointer"
+                            onClick={() => router.push('/courses')}
+                            className="px-8 py-3 bg-[#f1eacb] hover:bg-[#E8DDB8] border-2 border-[#A0C4FF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Previous
                         </button>
                         <button
-                            onClick={() => {
-                                if (!session?.user?.email) {
-                                    setShowLoginModal(true);
-                                    return;
-                                }
-                                router.push('/saved');
-                            }}
-                            className="px-10 py-2.5 rounded-lg font-semibold text-sm bg-[#A0C4FF] hover:bg-[#90B4EF] text-black transition-all duration-200 cursor-pointer"
+                            onClick={() => router.push('/saved')}
+                            className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Next
                         </button>
@@ -621,11 +619,6 @@ export default function TimetablePage() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Login Modal */}
-            {showLoginModal && (
-                <LoginModal onClose={() => setShowLoginModal(false)} callbackUrl="/timetable" />
             )}
 
             {/* Save Modal */}
