@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import type { AxiosError } from 'axios';
 import posthog from 'posthog-js';
+import LoginModal from '@/components/loginPopup';
 import { useTimetable } from '@/lib/TimeTableContext';
 import { exportToPDF } from '@/lib/exportToPDF';
 import { generateTT } from '@/lib/utils';
@@ -220,7 +222,10 @@ export default function TimetablePage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [showLogin, setShowLogin] = useState(false);
     const [timetableTitle, setTimetableTitle] = useState('My Schedule');
+    const [saveError, setSaveError] = useState('');
+    const [suggestedTitle, setSuggestedTitle] = useState('');
     const { scheduleRows, leftTimes, rightTimes } = useMemo(() => getSlotViewPayload(), []);
 
     const hasInitialized = useRef(false);
@@ -273,6 +278,57 @@ export default function TimetablePage() {
         setTimeout(() => setToast(''), 3000);
     }, []);
 
+    const getRequestErrorMessage = useCallback((error: unknown, fallback: string) => {
+        if (axios.isAxiosError(error)) {
+            const axiosError = error as AxiosError<{ error?: string; detail?: string }>;
+            return axiosError.response?.data?.error || axiosError.response?.data?.detail || fallback;
+        }
+
+        if (error instanceof Error && error.message) {
+            return error.message;
+        }
+
+        return fallback;
+    }, []);
+
+    const buildSuggestedTitle = useCallback((baseTitle: string, existingTitles: string[]) => {
+        const trimmedBase = baseTitle.trim() || 'My Schedule';
+        const titleSet = new Set(existingTitles.map((title) => title.trim().toLowerCase()));
+
+        if (!titleSet.has(trimmedBase.toLowerCase())) {
+            return trimmedBase;
+        }
+
+        let index = 2;
+        let candidate = `${trimmedBase} ${index}`;
+        while (titleSet.has(candidate.toLowerCase())) {
+            index += 1;
+            candidate = `${trimmedBase} ${index}`;
+        }
+
+        return candidate;
+    }, []);
+
+    const suggestAvailableTitle = useCallback(async (baseTitle: string) => {
+        if (!session?.user?.email) {
+            return '';
+        }
+
+        try {
+            const { data } = await axios.get(`/api/timetables?owner=${encodeURIComponent(session.user.email)}`);
+            const existingTitles = Array.isArray(data)
+                ? data.map((item: { title?: string }) => item.title).filter((title): title is string => Boolean(title))
+                : [];
+            const nextTitle = buildSuggestedTitle(baseTitle, existingTitles);
+            setSuggestedTitle(nextTitle);
+            setTimetableTitle(nextTitle);
+            return nextTitle;
+        } catch (suggestionError) {
+            console.error('Failed to build suggested title:', suggestionError);
+            return '';
+        }
+    }, [buildSuggestedTitle, session?.user?.email]);
+
     const clearSelectedSlot = useCallback(() => {
         setSelectedSlot(null);
         setHighlightedCells([]);
@@ -309,14 +365,18 @@ export default function TimetablePage() {
 
     const handleSave = async (customTitle?: string, options?: { skipRedirect?: boolean }) => {
         if (!session?.user?.email) {
+            setShowLogin(true);
             showToast('Please sign in to save or share your timetable.');
             return null;
         }
         if (isSaving || currentTT.length === 0) return null;
 
+        setSaveError('');
+        setSuggestedTitle('');
         setIsSaving(true);
         try {
             const editingTimetableId = getCookie('editingTimetableId');
+            const title = customTitle?.trim() || timetableTitle.trim() || 'My Schedule';
 
             const slotsData = currentTT.map(s => ({
                 slot: s.slotName,
@@ -327,7 +387,6 @@ export default function TimetablePage() {
 
             if (editingTimetableId) {
                 // Update existing timetable
-                const title = customTitle?.trim() || timetableTitle.trim() || 'My Schedule';
                 const res = await axios.patch(`/api/timetables/${editingTimetableId}`, {
                     title,
                     slots: slotsData,
@@ -340,6 +399,7 @@ export default function TimetablePage() {
                         title_length: title.length,
                     });
                     if (!options?.skipRedirect) {
+                        setShowSaveModal(false);
                         showToast('Timetable updated successfully!');
                         setTimeout(() => { router.refresh(); router.push('/saved'); }, 1200);
                     }
@@ -347,7 +407,6 @@ export default function TimetablePage() {
                 }
             } else {
                 // Create new timetable
-                const title = customTitle?.trim() || timetableTitle.trim() || 'My Schedule';
                 const res = await axios.post('/api/save-timetable', {
                     title,
                     slots: slotsData,
@@ -366,6 +425,7 @@ export default function TimetablePage() {
 
 
                     if (!options?.skipRedirect) {
+                        setShowSaveModal(false);
                         showToast('Timetable saved successfully!');
                         setTimeout(() => {
                             clearPlannerClientCache({ includeEditingState: true });
@@ -378,7 +438,19 @@ export default function TimetablePage() {
             }
         } catch (error) {
             console.error('Save error:', error);
-            showToast('Failed to save timetable.');
+            const message = getRequestErrorMessage(error, 'Failed to save timetable.');
+            if (message === 'A timetable with this title already exists') {
+                const attemptedTitle = customTitle?.trim() || timetableTitle.trim() || 'My Schedule';
+                const nextTitle = await suggestAvailableTitle(attemptedTitle);
+                const conflictMessage = nextTitle && nextTitle !== attemptedTitle
+                    ? `That title already exists. Suggested title: "${nextTitle}".`
+                    : message;
+                setSaveError(conflictMessage);
+                showToast(conflictMessage);
+            } else {
+                setSaveError(message);
+                showToast(message);
+            }
         } finally {
             setIsSaving(false);
         }
@@ -442,7 +514,7 @@ export default function TimetablePage() {
     const handleShare = async () => {
         console.log('handleShare called!');
         if (!session?.user?.email) {
-            window.alert('Please sign in to share your timetable.');
+            setShowLogin(true);
             showToast('Please sign in to share your timetable.');
             return;
         }
@@ -480,8 +552,6 @@ export default function TimetablePage() {
                     const res = await axios.get(`/api/timetables/${saved._id}`);
                     shareId = res.data.shareId;
                 } else {
-                    window.alert('Failed to save timetable for sharing (null result).');
-                    showToast('Failed to save timetable for sharing.');
                     return;
                 }
             }
@@ -509,9 +579,9 @@ export default function TimetablePage() {
             }
         } catch (error: unknown) {
             console.error('Share error:', error);
-            const message = error instanceof Error ? error.message : String(error);
+            const message = getRequestErrorMessage(error, 'Failed to share timetable. Please try again.');
             window.alert('Share Error: ' + message);
-            showToast('Failed to share timetable. Please try again.');
+            showToast(message);
         }
     };
 
@@ -648,7 +718,14 @@ export default function TimetablePage() {
                                 Download
                             </button>
                             <button
-                                onClick={() => setShowSaveModal(true)}
+                                onClick={() => {
+                                    if (!session?.user?.email) {
+                                        setShowLogin(true);
+                                        showToast('Please sign in to save your timetable.');
+                                        return;
+                                    }
+                                    setShowSaveModal(true);
+                                }}
                                 disabled={isSaving}
                                 className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
                             >
@@ -687,7 +764,14 @@ export default function TimetablePage() {
                                     if (num === 1) router.push('/preferences');
                                     if (num === 2) router.push('/courses');
                                     if (num === 3) router.push('/timetable');
-                                    if (num === 4) router.push('/saved');
+                                    if (num === 4) {
+                                        if (!session?.user?.email) {
+                                            setShowLogin(true);
+                                            showToast('Please sign in to continue to saved timetables.');
+                                            return;
+                                        }
+                                        router.push('/saved');
+                                    }
                                 }}
                                 className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
                                     num === 3
@@ -709,7 +793,14 @@ export default function TimetablePage() {
                             Previous
                         </button>
                         <button
-                            onClick={() => router.push('/saved')}
+                            onClick={() => {
+                                if (!session?.user?.email) {
+                                    setShowLogin(true);
+                                    showToast('Please sign in to continue to saved timetables.');
+                                    return;
+                                }
+                                router.push('/saved');
+                            }}
                             className="px-10 py-3 bg-[#A0C4FF] hover:bg-[#90B4EF] rounded-[10px] font-bold text-sm text-black transition-all duration-200 cursor-pointer"
                         >
                             Next
@@ -885,7 +976,11 @@ export default function TimetablePage() {
 
             {/* Save Modal */}
             {showSaveModal && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveModal(false)}>
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => {
+                    setSaveError('');
+                    setSuggestedTitle('');
+                    setShowSaveModal(false);
+                }}>
                     <div
                         className="bg-white rounded-[24px] shadow-2xl p-8 w-[90%] max-w-[400px] relative animate-[scaleIn_0.2s_ease]"
                         onClick={e => e.stopPropagation()}
@@ -894,31 +989,54 @@ export default function TimetablePage() {
                         <input
                             type="text"
                             value={timetableTitle}
-                            onChange={(e) => setTimetableTitle(e.target.value)}
+                            onChange={(e) => {
+                                setTimetableTitle(e.target.value);
+                                if (saveError) {
+                                    setSaveError('');
+                                }
+                                if (suggestedTitle) {
+                                    setSuggestedTitle('');
+                                }
+                            }}
                             className="w-full p-4 border-2 border-gray-100 rounded-xl mb-6 text-black font-semibold text-[16px] focus:border-[#A0C4FF] focus:ring-2 focus:ring-[#A0C4FF]/20 outline-none transition-all placeholder:font-medium"
                             placeholder="Enter a title..."
                             autoFocus
                         />
-                        <div className="flex justify-end gap-3">
+                        {saveError && (
+                            <p className="mb-4 rounded-xl bg-[#fff1f2] px-4 py-3 text-[14px] font-medium text-[#b42318]">
+                                {saveError}
+                            </p>
+                        )}
+                        <div className="!mt-4 margin flex items-center justify-end gap-5">
                             <button
-                                onClick={() => setShowSaveModal(false)}
-                                className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                                onClick={() => {
+                                    setSaveError('');
+                                    setSuggestedTitle('');
+                                    setShowSaveModal(false);
+                                }}
+                                className="min-w-[132px] px-6 py-3 text-center text-[16px] font-bold text-[#667085] transition-colors hover:text-[#475467]"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => {
-                                    setShowSaveModal(false);
                                     handleSave(timetableTitle);
                                 }}
                                 disabled={isSaving || !timetableTitle.trim()}
-                                className="px-6 py-2.5 rounded-xl font-bold bg-[#A0C4FF] text-black hover:bg-[#8ab2f2] transition-colors disabled:opacity-50"
+                                className="min-w-[120px] rounded-[22px] bg-[#9dbcf2] px-8 py-3 text-center text-[18px] font-black text-black shadow-[0_8px_18px_rgba(157,188,242,0.35)] transition-all hover:bg-[#8eb1ef] disabled:opacity-50"
                             >
                                 Save
                             </button>
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showLogin && (
+                <LoginModal
+                    onClose={() => setShowLogin(false)}
+                    callbackUrl={typeof window !== 'undefined' ? window.location.href : '/timetable'}
+                />
             )}
         </div>
     );
