@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import posthog from 'posthog-js';
 import { getCourseType } from '@/lib/course_codes_map';
 import { fullCourseData } from '@/lib/type';
 import { useTimetable } from '@/lib/TimeTableContext';
@@ -283,6 +284,12 @@ export default function SavedPage() {
             const { data } = await axios.get(`/api/timetables/${selectedTT._id}`);
             const url = `${window.location.origin}/share/${data.shareId}`;
             const copied = await copyToClipboard(url);
+            posthog.capture('timetable_shared', {
+                source: 'saved_timetables_page',
+                timetable_id: selectedTT._id,
+                slots_count: selectedTT.slots.length,
+                copied_to_clipboard: copied,
+            });
             if (copied) {
                 showToast('Share link copied to clipboard!');
             } else {
