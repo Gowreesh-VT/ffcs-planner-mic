@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import posthog from 'posthog-js';
 import { useTimetable } from '@/lib/TimeTableContext';
 import { exportToPDF } from '@/lib/exportToPDF';
 import { generateTT } from '@/lib/utils';
@@ -333,6 +334,11 @@ export default function TimetablePage() {
                 });
 
                 if (res.data.success) {
+                    posthog.capture('timetable_saved', {
+                        mode: 'update',
+                        slots_count: slotsData.length,
+                        title_length: title.length,
+                    });
                     if (!options?.skipRedirect) {
                         showToast('Timetable updated successfully!');
                         setTimeout(() => { router.refresh(); router.push('/saved'); }, 1200);
@@ -350,6 +356,11 @@ export default function TimetablePage() {
                 });
 
                 if (res.data.success) {
+                    posthog.capture('timetable_saved', {
+                        mode: 'create',
+                        slots_count: slotsData.length,
+                        title_length: title.length,
+                    });
                     // Update editing cookie so subsequent shares bind to the new save!
                     setCookie('editingTimetableId', res.data.timetable._id);
 
@@ -485,6 +496,11 @@ export default function TimetablePage() {
             const url = `${window.location.origin}/share/${shareId}`;
             console.log('Attempting to copy:', url);
             const copied = await copyToClipboard(url);
+            posthog.capture('timetable_shared', {
+                source: editingTimetableId ? 'existing_timetable' : 'new_timetable',
+                slots_count: currentTT.length,
+                copied_to_clipboard: copied,
+            });
             if (copied) {
                 window.alert('Share link copied!\n' + url);
                 showToast('Share link copied to clipboard!');
