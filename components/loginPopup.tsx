@@ -1,6 +1,7 @@
 "use client"
 
 import { signIn } from "next-auth/react"
+import posthog from "posthog-js";
 
 export default function LoginModal({ onClose, callbackUrl }: { onClose: () => void; callbackUrl?: string }) {
 
@@ -30,7 +31,14 @@ export default function LoginModal({ onClose, callbackUrl }: { onClose: () => vo
 
         {/* Google Button */}
         <button
-          onClick={() => signIn("google", { callbackUrl: callbackUrl || window.location.href })}
+          onClick={() => {
+            posthog.capture("login_clicked", {
+              provider: "google",
+              source: "login_modal",
+              has_callback_url: Boolean(callbackUrl),
+            });
+            signIn("google", { callbackUrl: callbackUrl || window.location.href });
+          }}
           className="flex items-center gap-3 px-6 py-3 border rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition mt-4 cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
