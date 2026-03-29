@@ -169,6 +169,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  justify-content: flex-start;
 }
 
 /* ── Cards + arrows container ── */
@@ -176,8 +177,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: fit-content;
   overflow: hidden;
 }
 
@@ -191,10 +192,10 @@
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
   padding: 10px 4px 10px;
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: 390px;
   scrollbar-gutter: stable;
-  align-items: flex-start;
+  align-items: stretch;
   align-content: flex-start;
 }
 
