@@ -386,9 +386,9 @@ export default function LandingPage() {
                   '#93c5fd', '#bbf7d0', '#fde047', '#bbf7d0', '#c4b5fd', '#93c5fd',
                   '#d8b4e2', '#fde047', '#bbf7d0', '#c4b5fd', '#bbf7d0', '#fde047'
                 ].map((color, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`cal-box ${animatingTiles[idx] ? 'animating' : ''}`} 
+                  <div
+                    key={idx}
+                    className={`cal-box ${animatingTiles[idx] ? 'animating' : ''}`}
                     style={{ background: color }}
                     onClick={() => handleTileClick(idx)}
                   ></div>
@@ -556,10 +556,13 @@ export default function LandingPage() {
               Built with ❤️ by Microsoft Innovations Club
             </div>
 
-            <div className="f-block f-updates">
-              <input type="text" placeholder="Get updates" />
-              <button>
-                <Image src="/Vector.png" alt="bell" width={16} height={16} />
+            <div className="f-block f-updates" style={{ padding: '8px' }}>
+              <button
+                onClick={() => router.push('/feedback')}
+                className="w-full flex items-center justify-center gap-2 bg-[#BFDBFE] hover:bg-[#93C5FD] transition-colors rounded-[8px] cursor-pointer"
+                style={{ height: '40px', width: '100%', border: 'none', fontWeight: 700, fontSize: '15px', color: '#000' }}
+              >
+                Give feedback
               </button>
             </div>
           </div>

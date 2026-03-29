@@ -311,10 +311,10 @@ export default function TeamPage() {
         <section className="hero-section" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="hero-text" style={{ textAlign: 'center', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
             <h1 style={{ fontSize: '3rem', marginBottom: '40px', color: '#111827' }}>Meet Our Team</h1>
-            
-            <div className="team-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+
+            <div className="team-grid" style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
               gap: '24px',
               padding: '0 20px'
             }}>
@@ -442,10 +442,13 @@ export default function TeamPage() {
               Built with ❤️ by Microsoft Innovations Club
             </div>
 
-            <div className="f-block f-updates">
-              <input type="text" placeholder="Get updates" />
-              <button>
-                <Image src="/Vector.png" alt="bell" width={16} height={16} />
+            <div className="f-block f-updates" style={{ padding: '8px' }}>
+              <button
+                onClick={() => router.push('/feedback')}
+                className="w-full flex items-center justify-center gap-2 bg-[#BFDBFE] hover:bg-[#93C5FD] transition-colors rounded-[8px] cursor-pointer"
+                style={{ height: '40px', width: '100%', border: 'none', fontWeight: 700, fontSize: '15px', color: '#000' }}
+              >
+                Give feedback
               </button>
             </div>
           </div>

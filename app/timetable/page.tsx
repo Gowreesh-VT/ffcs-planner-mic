@@ -317,10 +317,10 @@ export default function TimetablePage() {
                     },
                     label: token,
                     courseCode: slot.courseCode,
-                backgroundColor: node.dataset.bgcolor || '#ffffff',
-            };
+                    backgroundColor: node.dataset.bgcolor || '#ffffff',
+                };
+            });
         });
-    });
 
         setSelectedSlot(slot);
         setHighlightedCells(highlights);
@@ -614,98 +614,97 @@ export default function TimetablePage() {
             )}
 
             <div className="h-full px-[clamp(12px,1.5vw,24px)] pt-[clamp(10px,1vh,18px)] pb-29">
-            <div className="w-full max-w-450 h-full mx-auto flex flex-col min-h-0">
-                <div className="flex items-center gap-4 px-2 pt-4.5 pb-2 shrink-0">
-                    <h1 className="text-[24px] font-bold text-black">Timetables Generated</h1>
-
-                </div>
-
-                {/* Main Table Container */}
-                <div className="bg-white rounded-[18px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 min-h-0 overflow-hidden flex flex-col p-3" id="timetable-grid">
-                    
-                    <div id="rat" className="flex-1 min-h-0 overflow-hidden rounded-[14px] border border-[#f1f1f1]">
-                    <div className="h-full overflow-hidden">
-                    <TimetableTable
-                        scheduleRows={scheduleRows}
-                        leftTimes={leftTimes}
-                        rightTimes={rightTimes}
-                        theoryGrid={theoryGrid}
-                        labGrid={labGrid}
-                        selectedSlot={selectedSlot}
-                        openSelectedSlot={openSelectedSlot}
-                    />
-                    </div>
+                <div className="w-full max-w-450 h-full mx-auto flex flex-col min-h-0">
+                    <div className="flex items-center gap-4 px-2 pt-4.5 pb-2 shrink-0">
+                        <h1 className="text-[24px] font-bold text-black">Timetables Generated</h1>
                     </div>
 
-                {/* Pagination & Action Controls */}
-                <div className="flex flex-wrap items-center justify-between pt-2 mt-2 gap-3 shrink-0 w-full border-t border-[#f2ede3]">
-                    {/* Pagination */}
-                        <div className="flex items-center gap-1 bg-[#A0C4FF]/80 p-2 rounded-xl shadow-sm">
-                            <button
-                                onClick={() => setCurrentIndex(0)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-black hover:bg-white/40 transition-colors font-bold text-lg"
-                            >
-                                «
-                            </button>
-                            <div className="flex gap-1">
-                                {[0, 1, 2, 3].map(idx => (
-                                    idx < (timetableData?.length || 0) && (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setCurrentIndex(idx)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm transition-all ${currentIndex === idx
-                                                ? 'bg-white text-black shadow-sm'
-                                                : 'bg-transparent text-black hover:bg-white/40'
-                                                }`}
-                                        >
-                                            {idx + 1}
-                                        </button>
-                                    )
-                                ))}
+                    {/* Main Table Container */}
+                    <div className="bg-white rounded-[18px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-white flex-1 min-h-0 overflow-hidden flex flex-col p-3" id="timetable-grid">
+
+                        <div id="rat" className="flex-1 min-h-0 overflow-auto scrollbar-thin rounded-[14px] border border-[#f1f1f1]">
+                            <div className="min-h-full">
+                                <TimetableTable
+                                    scheduleRows={scheduleRows}
+                                    leftTimes={leftTimes}
+                                    rightTimes={rightTimes}
+                                    theoryGrid={theoryGrid}
+                                    labGrid={labGrid}
+                                    selectedSlot={selectedSlot}
+                                    openSelectedSlot={openSelectedSlot}
+                                />
                             </div>
-                            <button
-                                onClick={() => setCurrentIndex((timetableData?.length || 1) - 1)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-black hover:bg-white/40 transition-colors font-bold text-lg"
-                            >
-                                »
-                            </button>
                         </div>
 
-                        {/* Action Bar */}
-                        <div className="flex flex-wrap items-center justify-end gap-3">
-                            <button
-                                onClick={handleShare}
-                                className="flex items-center gap-2 bg-[#A0C4FF] hover:bg-[#8ab2f2] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
-                                Share
-                            </button>
-                            <button
-                                onClick={() => setShowDownloadModal(true)}
-                                className="flex items-center gap-2 bg-[#C8F7DC] hover:bg-[#b0eac8] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-                                Download
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (!session?.user?.email) {
-                                        setShowLogin(true);
-                                        showToast('Please sign in to save your timetable.', 'error');
-                                        return;
-                                    }
-                                    setShowSaveModal(true);
-                                }}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-                                Save
-                            </button>
+                        {/* Pagination & Action Controls */}
+                        <div className="flex flex-wrap items-center justify-between pt-2 mt-2 gap-3 shrink-0 w-full border-t border-[#f2ede3]">
+                            {/* Pagination */}
+                            <div className="flex items-center gap-1 bg-[#A0C4FF]/80 p-2 rounded-xl shadow-sm">
+                                <button
+                                    onClick={() => setCurrentIndex(0)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black hover:bg-white/40 transition-colors font-bold text-lg"
+                                >
+                                    «
+                                </button>
+                                <div className="flex gap-1">
+                                    {[0, 1, 2, 3].map(idx => (
+                                        idx < (timetableData?.length || 0) && (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setCurrentIndex(idx)}
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg font-bold text-sm transition-all ${currentIndex === idx
+                                                    ? 'bg-white text-black shadow-sm'
+                                                    : 'bg-transparent text-black hover:bg-white/40'
+                                                    }`}
+                                            >
+                                                {idx + 1}
+                                            </button>
+                                        )
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setCurrentIndex((timetableData?.length || 1) - 1)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-black hover:bg-white/40 transition-colors font-bold text-lg"
+                                >
+                                    »
+                                </button>
+                            </div>
+
+                            {/* Action Bar */}
+                            <div className="flex flex-wrap items-center justify-end gap-3">
+                                <button
+                                    onClick={handleShare}
+                                    className="flex items-center gap-2 bg-[#A0C4FF] hover:bg-[#8ab2f2] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
+                                    Share
+                                </button>
+                                <button
+                                    onClick={() => setShowDownloadModal(true)}
+                                    className="flex items-center gap-2 bg-[#C8F7DC] hover:bg-[#b0eac8] text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 text-[14px]"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+                                    Download
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (!session?.user?.email) {
+                                            setShowLogin(true);
+                                            showToast('Please sign in to save your timetable.', 'error');
+                                            return;
+                                        }
+                                        setShowSaveModal(true);
+                                    }}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 bg-[#F9A8D4]/60 hover:bg-[#F9A8D4]/80 text-black font-semibold py-2.5 px-6 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-[14px]"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                                    Save
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </div>
 
             {/* Bottom Navigation */}
@@ -921,6 +920,7 @@ export default function TimetablePage() {
                         <h2 className="text-center text-[24px] font-black text-black">Download PDF</h2>
                         <p className="mt-2 text-center text-[15px] font-medium text-gray-600">Choose what you want to download.</p>
                         <div className="mt-6 flex flex-col gap-3">
+                            <br></br>
                             <button
                                 onClick={() => handleDownload('timetable')}
                                 className="rounded-2xl bg-[#C8F7DC] px-5 py-4 text-left text-[16px] font-bold text-black transition-colors hover:bg-[#b0eac8]"
@@ -934,6 +934,7 @@ export default function TimetablePage() {
                                 Selected Courses
                             </button>
                         </div>
+                        <br></br>
                         <button
                             onClick={() => setShowDownloadModal(false)}
                             className="mt-3! w-full rounded-[14px] bg-[#f3f4f6] px-4 py-3 text-[15px] font-semibold text-gray-700 transition-colors hover:bg-[#e5e7eb]"
