@@ -500,7 +500,7 @@ export default function LandingPage() {
             <div className="f-block f-about">
               <h3>FFCS</h3>
               <p>
-                The Flexible Fast Customized Schedule (FFCS) planning tool helps VIT Chennai students organize their course selections before registration. Create multiple timetables, compare schedules, and prepare for seamless FFCS registration with our intelligent course and slot management system.
+                The Fully Flexible Credit System (FFCS) planning tool helps VIT Chennai students organize their course selections before registration. Create multiple timetables, compare schedules, and prepare for seamless FFCS registration with our intelligent course and slot management system.
               </p>
             </div>
 

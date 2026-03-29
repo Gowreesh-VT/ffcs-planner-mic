@@ -94,7 +94,7 @@ function TimetableTable({
 }) {
     return (
         <table className={`w-full table-fixed border-collapse bg-white text-center min-w-full ${exportMode ? '' : 'h-full'}`}>
-            <thead className={exportMode ? '' : 'h-12'}>
+            <thead className={exportMode ? '' : 'h-12 sticky top-0 z-20 shadow-sm'}>
                 <tr className={`border-b-2 border-white ${exportMode ? 'h-18.5' : 'h-7.5'}`}>
                     <th className={`text-center font-bold text-black border-r-2 border-white bg-white ${exportMode ? 'w-37.5 p-3 text-[20px] leading-tight' : 'w-[5vw] p-0.5 text-[9px] leading-tight'}`}>Theory Hours</th>
                     {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
@@ -219,6 +219,7 @@ export default function TimetablePage() {
     const [selectedSlotCategory, setSelectedSlotCategory] = useState<SlotCategory | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('success');
     const [clashMessage, setClashMessage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showSaveModal, setShowSaveModal] = useState(false);
@@ -273,8 +274,9 @@ export default function TimetablePage() {
     }, [currentTT]);
     const exportCreditsLabel = 'TBD';
 
-    const showToast = useCallback((msg: string) => {
+    const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
         setToast(msg);
+        setToastType(type);
         setTimeout(() => setToast(''), 3000);
     }, []);
 
@@ -402,7 +404,7 @@ export default function TimetablePage() {
             console.error('Save error:', error);
             const message = getRequestErrorMessage(error, 'Failed to save timetable.');
             setSaveError(message);
-            showToast(message);
+            showToast(message, 'error');
         } finally {
             setIsSaving(false);
         }
@@ -412,7 +414,7 @@ export default function TimetablePage() {
     const handleDownload = async (target: 'timetable' | 'slots') => {
         console.log('handleDownload called', { currentTTLength: currentTT.length });
         if (currentTT.length === 0) {
-            showToast('No timetable data to download.');
+            showToast('No timetable data to download.', 'error');
             window.alert('No timetable data to download.');
             return;
         }
@@ -427,7 +429,7 @@ export default function TimetablePage() {
             showToast('PDF downloaded successfully!');
         } catch (error: unknown) {
             console.error('PDF error:', error);
-            showToast('Failed to generate PDF. Please try again.');
+            showToast('Failed to generate PDF. Please try again.', 'error');
             const message = error instanceof Error ? error.message : String(error);
             window.alert('Failed to generate PDF: ' + message);
         } finally {
@@ -467,12 +469,12 @@ export default function TimetablePage() {
         console.log('handleShare called!');
         if (!session?.user?.email) {
             setShowLogin(true);
-            showToast('Please sign in to share your timetable.');
+            showToast('Please sign in to share your timetable.', 'error');
             return;
         }
         if (currentTT.length === 0) {
             window.alert('No timetable data to share.');
-            showToast('No timetable data to share.');
+            showToast('No timetable data to share.', 'error');
             return;
         }
 
@@ -511,7 +513,7 @@ export default function TimetablePage() {
             console.log('Got shareId:', shareId);
             if (!shareId) {
                 window.alert('Could not generate or find shareId.');
-                showToast('Could not generate share link.');
+                showToast('Could not generate share link.', 'error');
                 return;
             }
 
@@ -533,7 +535,7 @@ export default function TimetablePage() {
             console.error('Share error:', error);
             const message = getRequestErrorMessage(error, 'Failed to share timetable. Please try again.');
             window.alert('Share Error: ' + message);
-            showToast(message);
+            showToast(message, 'error');
         }
     };
 
@@ -590,7 +592,7 @@ export default function TimetablePage() {
         <div className="h-screen bg-[#F5E6D3] font-sans overflow-hidden">
             {/* Toast */}
             {toast && (
-                <div className="fixed top-8 right-8 z-100 bg-[#1a1a2e] text-white px-8 py-4 rounded-2xl shadow-2xl text-[14px] font-bold animate-[slideIn_0.3s_ease] border border-white/10">
+                <div className={`fixed top-8 right-8 z-100 text-white px-8 py-4 rounded-2xl shadow-2xl text-[14px] font-bold animate-[slideIn_0.3s_ease] border border-white/10 ${toastType === 'error' ? 'bg-red-500' : 'bg-[#1a1a2e]'}`}>
                     {toast}
                 </div>
             )}
@@ -673,7 +675,7 @@ export default function TimetablePage() {
                                 onClick={() => {
                                     if (!session?.user?.email) {
                                         setShowLogin(true);
-                                        showToast('Please sign in to save your timetable.');
+                                        showToast('Please sign in to save your timetable.', 'error');
                                         return;
                                     }
                                     setShowSaveModal(true);
@@ -719,7 +721,7 @@ export default function TimetablePage() {
                                     if (num === 4) {
                                         if (!session?.user?.email) {
                                             setShowLogin(true);
-                                            showToast('Please sign in to continue to saved timetables.');
+                                            showToast('Please sign in to continue to saved timetables.', 'error');
                                             return;
                                         }
                                         router.push('/saved');
@@ -748,7 +750,7 @@ export default function TimetablePage() {
                             onClick={() => {
                                 if (!session?.user?.email) {
                                     setShowLogin(true);
-                                    showToast('Please sign in to continue to saved timetables.');
+                                    showToast('Please sign in to continue to saved timetables.', 'error');
                                     return;
                                 }
                                 router.push('/saved');

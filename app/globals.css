@@ -51,6 +51,21 @@ body {
   font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
+button:not(:disabled),
+[role="button"]:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="reset"]:not(:disabled) {
+  cursor: pointer !important;
+}
+
+button:disabled,
+input:disabled,
+[disabled],
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
 /* Custom grid for 13-column timetable preview */
 .grid-cols-13 {
   grid-template-columns: repeat(13, minmax(0, 1fr));

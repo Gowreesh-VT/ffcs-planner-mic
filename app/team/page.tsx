@@ -7,9 +7,44 @@ import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { clearPlannerClientCache } from "@/lib/clientCache";
 
+type FloatingTile = {
+  id: number;
+  letter: string;
+  color: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  baseAngle: number;
+  angle: number;
+  rotAmplitude: number;
+  rotSpeed: number;
+  rotPhase: number;
+  depth: number;
+  depthPhase: number;
+  wobblePhase: number;
+  vibrationPhase: number;
+  jitterX: number;
+  jitterY: number;
+};
+
+const FLOATING_TILE_SIZE = 44;
+
+const FLOATING_TILE_LAYOUT = [
+  { letter: "G", color: "#d1fae5", xPct: 0.48, yPct: 0.1, angle: 18, vx: -0.26, vy: 0.18 },
+  { letter: "B", color: "#bfdbfe", xPct: 0.68, yPct: 0.26, angle: -34, vx: -0.2, vy: 0.2 },
+  { letter: "E", color: "#a7f3d0", xPct: 0.84, yPct: 0.1, angle: -30, vx: -0.16, vy: 0.26 },
+  { letter: "C", color: "#f3e8ff", xPct: 0.1, yPct: 0.44, angle: -22, vx: 0.24, vy: -0.12 },
+  { letter: "D", color: "#fef3c7", xPct: 0.34, yPct: 0.58, angle: -8, vx: 0.16, vy: -0.2 },
+  { letter: "F", color: "#e9d5ff", xPct: 0.62, yPct: 0.66, angle: 34, vx: 0.22, vy: -0.16 },
+  { letter: "A", color: "#fef08a", xPct: 0.84, yPct: 0.62, angle: -8, vx: -0.2, vy: -0.24 }
+];
+
 export default function TeamPage() {
   const [showLogin, setShowLogin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [floatingTiles, setFloatingTiles] = useState<FloatingTile[]>([]);
+  const floatingContainerRef = React.useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -47,6 +82,182 @@ export default function TeamPage() {
       if (inactivityTimer) clearTimeout(inactivityTimer);
     };
   }, [session, handleLogout]);
+
+  React.useEffect(() => {
+    const container = floatingContainerRef.current;
+    if (!container) return;
+
+    const makeInitialTiles = (width: number, height: number): FloatingTile[] => {
+      const maxX = Math.max(0, width - FLOATING_TILE_SIZE);
+      const maxY = Math.max(0, height - FLOATING_TILE_SIZE);
+      return FLOATING_TILE_LAYOUT.map((seed, idx) => ({
+        id: idx,
+        letter: seed.letter,
+        color: seed.color,
+        x: seed.xPct * maxX,
+        y: seed.yPct * maxY,
+        vx: seed.vx * 0.82,
+        vy: seed.vy * 0.82,
+        baseAngle: seed.angle,
+        angle: seed.angle,
+        rotAmplitude: 15 + ((idx * 2) % 11),
+        rotSpeed: (idx % 2 === 0 ? 1 : -1) * (0.00044 + idx * 0.00003),
+        rotPhase: idx * 0.7,
+        depth: 0,
+        depthPhase: idx * 0.8,
+        wobblePhase: idx * 1.2,
+        vibrationPhase: idx * 1.7,
+        jitterX: 0,
+        jitterY: 0
+      }));
+    };
+
+    const initializeTiles = () => {
+      const bounds = container.getBoundingClientRect();
+      setFloatingTiles(makeInitialTiles(bounds.width, bounds.height));
+    };
+
+    initializeTiles();
+
+    let rafId = 0;
+    let lastTime = performance.now();
+
+    const stepAnimation = (now: number) => {
+      const elapsed = Math.min(36, now - lastTime);
+      const dt = elapsed / 16.666;
+      lastTime = now;
+
+      const bounds = container.getBoundingClientRect();
+      const maxX = Math.max(0, bounds.width - FLOATING_TILE_SIZE);
+      const maxY = Math.max(0, bounds.height - FLOATING_TILE_SIZE);
+
+      setFloatingTiles((prev) => {
+        if (prev.length === 0) return prev;
+
+        const next = prev.map((tile) => {
+          const driftX = Math.sin(now * 0.00045 + tile.wobblePhase) * 0.016;
+          const driftY = Math.cos(now * 0.00037 + tile.wobblePhase * 1.25) * 0.016;
+          let vx = (tile.vx + driftX * dt) * 0.996;
+          let vy = (tile.vy + driftY * dt) * 0.996;
+
+          const maxSpeed = 0.44;
+          const speed = Math.hypot(vx, vy);
+          if (speed > maxSpeed) {
+            const scale = maxSpeed / speed;
+            vx *= scale;
+            vy *= scale;
+          }
+
+          let x = tile.x + vx * dt;
+          let y = tile.y + vy * dt;
+
+          if (x <= 0) {
+            x = 0;
+            vx = Math.abs(vx) * 0.94;
+          } else if (x >= maxX) {
+            x = maxX;
+            vx = -Math.abs(vx) * 0.94;
+          }
+
+          if (y <= 0) {
+            y = 0;
+            vy = Math.abs(vy) * 0.94;
+          } else if (y >= maxY) {
+            y = maxY;
+            vy = -Math.abs(vy) * 0.94;
+          }
+
+          const angleSwing = Math.sin(now * tile.rotSpeed + tile.rotPhase) * tile.rotAmplitude;
+          const buzzRotate = Math.sin(now * 0.032 + tile.vibrationPhase * 1.7) * 1.6;
+          const angle = tile.baseAngle + angleSwing + buzzRotate;
+          const depth = Math.sin(now * 0.0005 + tile.depthPhase);
+          const jitterX =
+            Math.sin(now * 0.022 + tile.vibrationPhase) * 0.7 +
+            Math.sin(now * 0.049 + tile.vibrationPhase * 1.9) * 0.42;
+          const jitterY =
+            Math.cos(now * 0.02 + tile.vibrationPhase * 1.2) * 0.56 +
+            Math.cos(now * 0.053 + tile.vibrationPhase * 2.1) * 0.35;
+
+          return {
+            ...tile,
+            x,
+            y,
+            vx,
+            vy,
+            angle,
+            depth,
+            jitterX,
+            jitterY
+          };
+        });
+
+        const minDist = FLOATING_TILE_SIZE * 0.82;
+        for (let i = 0; i < next.length; i++) {
+          for (let j = i + 1; j < next.length; j++) {
+            const dx = next[j].x - next[i].x;
+            const dy = next[j].y - next[i].y;
+            const distance = Math.hypot(dx, dy);
+            if (distance <= 0 || distance >= minDist) continue;
+
+            const nx = dx / distance;
+            const ny = dy / distance;
+            const overlap = minDist - distance;
+
+            next[i].x -= nx * overlap * 0.52;
+            next[i].y -= ny * overlap * 0.52;
+            next[j].x += nx * overlap * 0.52;
+            next[j].y += ny * overlap * 0.52;
+
+            const relVx = next[j].vx - next[i].vx;
+            const relVy = next[j].vy - next[i].vy;
+            const alongNormal = relVx * nx + relVy * ny;
+
+            if (alongNormal < 0) {
+              const impulse = -alongNormal * 0.28;
+              next[i].vx -= impulse * nx;
+              next[i].vy -= impulse * ny;
+              next[j].vx += impulse * nx;
+              next[j].vy += impulse * ny;
+            }
+
+            next[i].x = Math.max(0, Math.min(maxX, next[i].x));
+            next[i].y = Math.max(0, Math.min(maxY, next[i].y));
+            next[j].x = Math.max(0, Math.min(maxX, next[j].x));
+            next[j].y = Math.max(0, Math.min(maxY, next[j].y));
+          }
+        }
+
+        return next;
+      });
+
+      rafId = window.requestAnimationFrame(stepAnimation);
+    };
+
+    rafId = window.requestAnimationFrame(stepAnimation);
+
+    const resizeObserver = new ResizeObserver(() => {
+      const bounds = container.getBoundingClientRect();
+      const maxX = Math.max(0, bounds.width - FLOATING_TILE_SIZE);
+      const maxY = Math.max(0, bounds.height - FLOATING_TILE_SIZE);
+      setFloatingTiles((prev) => {
+        if (prev.length === 0) {
+          return makeInitialTiles(bounds.width, bounds.height);
+        }
+        return prev.map((tile) => ({
+          ...tile,
+          x: Math.max(0, Math.min(maxX, tile.x)),
+          y: Math.max(0, Math.min(maxY, tile.y))
+        }));
+      });
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return (
     <div className="landing-page">
@@ -175,7 +386,7 @@ export default function TeamPage() {
             <div className="f-block f-about">
               <h3>FFCS</h3>
               <p>
-                The Flexible Fast Customized Schedule (FFCS) planning tool helps VIT Chennai students organize their course selections before registration. Create multiple timetables, compare schedules, and prepare for seamless FFCS registration with our intelligent course and slot management system.
+                The Fully Flexible Credit System (FFCS) planning tool helps VIT Chennai students organize their course selections before registration. Create multiple timetables, compare schedules, and prepare for seamless FFCS registration with our intelligent course and slot management system.
               </p>
             </div>
 
@@ -207,14 +418,24 @@ export default function TeamPage() {
               </button>
             </div>
 
-            <div className="f-block f-graphics">
-              <div className="floating-tile" style={{ background: '#f3e8ff', top: '15px', left: '15px', transform: 'rotate(-12deg)' }}>C</div>
-              <div className="floating-tile" style={{ background: '#fef3c7', top: '55px', left: '45px', transform: 'rotate(8deg)' }}>D</div>
-              <div className="floating-tile" style={{ background: '#d1fae5', top: '20px', left: '75px', transform: 'rotate(15deg)' }}>G</div>
-              <div className="floating-tile" style={{ background: '#a7f3d0', top: '30px', right: '25px', transform: 'rotate(25deg)' }}>E</div>
-              <div className="floating-tile" style={{ background: '#bfdbfe', top: '65px', right: '65px', transform: 'rotate(-18deg)' }}>B</div>
-              <div className="floating-tile" style={{ background: '#fef08a', top: '85px', right: '15px', transform: 'rotate(-6deg)' }}>A</div>
-              <div className="floating-tile" style={{ background: '#e9d5ff', top: '95px', left: '110px', transform: 'rotate(22deg)' }}>F</div>
+            <div className="f-block f-graphics" ref={floatingContainerRef}>
+              {floatingTiles.map((tile) => {
+                const scale = 0.96 + (tile.depth + 1) * 0.05;
+                const zDepth = Math.round(tile.depth * 10);
+                return (
+                  <div
+                    key={tile.id}
+                    className="floating-tile"
+                    style={{
+                      background: tile.color,
+                      transform: `translate3d(${tile.x + tile.jitterX}px, ${tile.y + tile.jitterY}px, ${zDepth}px) rotate(${tile.angle}deg) scale(${scale})`,
+                      zIndex: Math.round((tile.depth + 1) * 10)
+                    }}
+                  >
+                    {tile.letter}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="f-block f-credits">
