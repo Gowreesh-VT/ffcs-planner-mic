@@ -25,7 +25,8 @@ const MAX_FIELD_LENGTH = 200;
 const ALLOWED_TIMETABLE_UPDATE_KEYS = new Set(['title', 'slots', 'isPublic']);
 const ALLOWED_TIMETABLE_CREATE_KEYS = new Set(['title', 'slots', 'owner', 'isPublic']);
 
-const isNonEmptyString = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+const isNonEmptyString = (value: unknown): value is string =>
+    typeof value === 'string' && value.trim().length > 0;
 
 const normalizeString = (value: unknown, field: string, maxLength = MAX_FIELD_LENGTH) => {
     if (!isNonEmptyString(value)) {

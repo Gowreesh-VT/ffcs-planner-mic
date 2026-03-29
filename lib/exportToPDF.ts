@@ -25,11 +25,6 @@ export const exportToPDF = async (
         overflow: string;
         overflowX: string;
     }[] = [];
-    const styleFixups: {
-        el: HTMLElement;
-        styles: Partial<Record<keyof CSSStyleDeclaration, string>>;
-    }[] = [];
-
     const colorProperties = [
         'color',
         'backgroundColor',
@@ -45,6 +40,13 @@ export const exportToPDF = async (
         'fill',
         'stroke',
     ] as const;
+
+    type ColorProperty = (typeof colorProperties)[number];
+
+    const styleFixups: {
+        el: HTMLElement;
+        styles: Partial<Record<ColorProperty, string>>;
+    }[] = [];
 
     const copySanitizedStyles = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
         const computed = window.getComputedStyle(sourceEl);
@@ -131,7 +133,7 @@ export const exportToPDF = async (
                 ignoreElements: (el: Element) => {
                     return el.tagName === 'IFRAME';
                 },
-            });
+            } as any);
 
             buildPdfFromImage(canvas.toDataURL('image/png'), canvas.width, canvas.height);
         } catch (error) {
@@ -163,8 +165,8 @@ export const exportToPDF = async (
             fix.el.style.overflowX = fix.overflowX;
         }
         for (const fix of styleFixups) {
-            for (const [property, value] of Object.entries(fix.styles)) {
-                fix.el.style[property as keyof CSSStyleDeclaration] = value ?? '';
+            for (const property of colorProperties) {
+                fix.el.style[property] = fix.styles[property] ?? '';
             }
         }
     }
