@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/authOptions';
 import { validateTimetableCreateBody } from '@/lib/timetableValidation';
 import { enforceRateLimit } from '@/lib/rateLimit';
+import { resolveUniqueTimetableTitle } from '@/lib/timetableTitle';
 
 // Prevent Next.js from caching this route
 export const dynamic = 'force-dynamic';
@@ -39,16 +40,12 @@ export async function POST(req: NextRequest) {
 
         await dbConnect();
 
-        // Prevent duplicate timetable names for the same user
-        const existingTimetable = await Timetable.findOne({ owner, title });
-        if (existingTimetable) {
-            return NextResponse.json({ error: 'A timetable with this title already exists' }, { status: 409 });
-        }
+        const resolvedTitle = await resolveUniqueTimetableTitle({ owner, requestedTitle: title });
 
         let timetable;
         if (!isPublic) {
             timetable = await Timetable.create({
-                title,
+                title: resolvedTitle,
                 slots,
                 owner,
                 isPublic,
@@ -60,7 +57,7 @@ export async function POST(req: NextRequest) {
                 const shareId = generateShareId();
                 try {
                     timetable = await Timetable.create({
-                        title,
+                        title: resolvedTitle,
                         slots,
                         owner,
                         isPublic,
