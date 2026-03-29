@@ -3,8 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
+import { generateShareId } from '@/lib/shareIDgenerate';
+import mongoose from 'mongoose';
+import { validateTimetableUpdateBody } from '@/lib/timetableValidation';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
+
+const MAX_SHARE_ID_GENERATION_ATTEMPTS = 5;
 
 const NO_STORE_HEADERS = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -20,8 +26,22 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const rateLimit = enforceRateLimit(req, {
+            key: 'timetable-delete',
+            windowMs: 60_000,
+            maxRequests: 30,
+            identifier: `user:${session.user.email.trim().toLowerCase()}`,
+        });
+
+        if (rateLimit.limited) {
+            return rateLimit.response;
+        }
+
         await dbConnect();
         const { id } = await params;
+        if (!mongoose.isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid timetable id' }, { status: 400 });
+        }
 
         const timetable = await Timetable.findById(id);
 
@@ -35,10 +55,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
         await Timetable.findByIdAndDelete(id);
 
-        return NextResponse.json({ success: true });
-    } catch (err: any) {
-        console.error('[timetables/DELETE] Error:', err?.message || err);
-        return NextResponse.json({ error: 'Failed to delete', detail: err?.message }, { status: 500 });
+        return NextResponse.json({ success: true }, { headers: rateLimit.headers });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to delete';
+        console.error('[timetables/DELETE] Error:', message);
+        return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
     }
 }
 
@@ -50,14 +71,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const rateLimit = enforceRateLimit(req, {
+            key: 'timetable-patch',
+            windowMs: 60_000,
+            maxRequests: 60,
+            identifier: `user:${session.user.email.trim().toLowerCase()}`,
+        });
+
+        if (rateLimit.limited) {
+            return rateLimit.response;
+        }
+
         await dbConnect();
         const { id } = await params;
+        if (!mongoose.isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid timetable id' }, { status: 400 });
+        }
         const body = await req.json();
-
-        const update: Record<string, unknown> = {};
-        if (body.title !== undefined) update.title = body.title;
-        if (body.isPublic !== undefined) update.isPublic = body.isPublic;
-        if (body.slots !== undefined) update.slots = body.slots;
+        const update: Record<string, unknown> = { ...validateTimetableUpdateBody(body) };
 
         const timetable = await Timetable.findById(id);
 
@@ -70,19 +101,68 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         }
 
         // Prevent duplicate timetable names for the same user upon rename
-        if (body.title !== undefined) {
-             const existingTimetable = await Timetable.findOne({ owner: session.user.email, title: body.title.trim(), _id: { $ne: id } });
-             if (existingTimetable) {
-                  return NextResponse.json({ error: 'A timetable with this title already exists' }, { status: 409 });
-             }
+        if (update.title !== undefined) {
+            const existingTimetable = await Timetable.findOne({ owner: session.user.email, title: update.title, _id: { $ne: id } });
+            if (existingTimetable) {
+                return NextResponse.json({ error: 'A timetable with this title already exists' }, { status: 409 });
+            }
         }
 
-        await Timetable.findByIdAndUpdate(id, update);
+        const shouldGenerateShareId = update.isPublic === true && !timetable.shareId;
 
-        return NextResponse.json({ success: true });
-    } catch (err: any) {
-        console.error('[timetables/PATCH] Error:', err?.message || err);
-        return NextResponse.json({ error: 'Failed to update', detail: err?.message }, { status: 500 });
+        if (!shouldGenerateShareId) {
+            await Timetable.findByIdAndUpdate(id, update, {
+                returnDocument: 'after',
+                runValidators: true,
+            });
+        } else {
+            let attempts = 0;
+            let updated = false;
+
+            while (attempts < MAX_SHARE_ID_GENERATION_ATTEMPTS && !updated) {
+                attempts += 1;
+                const candidateShareId = generateShareId();
+
+                try {
+                    await Timetable.findByIdAndUpdate(
+                        id,
+                        {
+                            ...update,
+                            shareId: candidateShareId,
+                        },
+                        {
+                            returnDocument: 'after',
+                            runValidators: true,
+                        }
+                    );
+                    updated = true;
+                } catch (err: unknown) {
+                    const maybeMongoError = err as { code?: number; keyPattern?: Record<string, number> };
+                    if (maybeMongoError?.code === 11000 && maybeMongoError?.keyPattern?.shareId) {
+                        continue;
+                    }
+                    throw err;
+                }
+            }
+
+            if (!updated) {
+                return NextResponse.json({ error: 'Failed to generate a unique share link. Please try again.' }, { status: 503 });
+            }
+        }
+
+        return NextResponse.json({ success: true }, { headers: rateLimit.headers });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to update';
+        const maybeMongoError = err as { code?: number; keyPattern?: Record<string, number> };
+        if (maybeMongoError?.code === 11000) {
+            if (maybeMongoError?.keyPattern?.shareId) {
+                return NextResponse.json({ error: 'Failed to generate a unique share link. Please try again.' }, { status: 503 });
+            }
+            return NextResponse.json({ error: 'A timetable with this title already exists' }, { status: 409 });
+        }
+        console.error('[timetables/PATCH] Error:', message);
+        const status = message.includes('must be') || message.includes('Too many') || message.includes('too long') ? 400 : 500;
+        return NextResponse.json({ error: status === 400 ? message : 'Failed to update' }, { status });
     }
 }
 
@@ -94,8 +174,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const rateLimit = enforceRateLimit(req, {
+            key: 'timetable-get',
+            windowMs: 60_000,
+            maxRequests: 120,
+            identifier: `user:${session.user.email.trim().toLowerCase()}`,
+        });
+
+        if (rateLimit.limited) {
+            return rateLimit.response;
+        }
+
         await dbConnect();
         const { id } = await params;
+        if (!mongoose.isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid timetable id' }, { status: 400 });
+        }
 
         const timetable = await Timetable.findById(id).lean();
 
@@ -107,9 +201,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        return NextResponse.json(timetable, { status: 200, headers: NO_STORE_HEADERS });
-    } catch (err: any) {
-        console.error('[timetables/GET] Error:', err?.message || err);
-        return NextResponse.json({ error: 'Failed to fetch timetable', detail: err?.message }, { status: 500 });
+        return NextResponse.json(timetable, { status: 200, headers: { ...NO_STORE_HEADERS, ...rateLimit.headers } });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch timetable';
+        console.error('[timetables/GET] Error:', message);
+        return NextResponse.json({ error: 'Failed to fetch timetable' }, { status: 500 });
     }
 }
