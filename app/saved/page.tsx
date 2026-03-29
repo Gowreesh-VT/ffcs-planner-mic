@@ -12,11 +12,12 @@ import { useTimetable } from '@/lib/TimeTableContext';
 import { exportToPDF } from '@/lib/exportToPDF';
 import Image from 'next/image';
 import './saved.css';
+import { setPlannerStoredValue } from '@/lib/plannerStorage';
 
 
 /* ── Slot → timetable grid mapping ── */
-const THEORY_SLOTS: Record<string, [number, number]> = {};
-const LAB_SLOTS: Record<string, [number, number]> = {};
+const THEORY_SLOTS: Record<string, [number, number][]> = {};
+const LAB_SLOTS: Record<string, [number, number][]> = {};
 
 const theoryLabels = [
     ['A1', 'F1', 'D1', 'TB1', 'TG1', '', 'A2', 'F2', 'D2', '', 'TB2', 'TG2', 'S3'],
@@ -33,8 +34,16 @@ const labLabels = [
     ['L25', 'L26', 'L27', 'L28', 'L29', 'L30', 'L55', 'L56', 'L57', 'L58', 'L59', 'L60', ''],
 ];
 
-theoryLabels.forEach((row, r) => row.forEach((s, c) => { if (s) THEORY_SLOTS[s] = [r, c]; }));
-labLabels.forEach((row, r) => row.forEach((s, c) => { if (s) LAB_SLOTS[s] = [r, c]; }));
+theoryLabels.forEach((row, r) => row.forEach((s, c) => {
+    if (!s) return;
+    if (!THEORY_SLOTS[s]) THEORY_SLOTS[s] = [];
+    THEORY_SLOTS[s].push([r, c]);
+}));
+labLabels.forEach((row, r) => row.forEach((s, c) => {
+    if (!s) return;
+    if (!LAB_SLOTS[s]) LAB_SLOTS[s] = [];
+    LAB_SLOTS[s].push([r, c]);
+}));
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -202,7 +211,7 @@ export default function SavedPage() {
         const coursePreferences = convertTimetableToCoursePreferences(tt);
 
         // Save to cookie
-        setCookie('preferenceCourses', JSON.stringify(coursePreferences));
+        setPlannerStoredValue('preferenceCourses', JSON.stringify(coursePreferences));
 
         // Store the timetable ID being edited
         setCookie('editingTimetableId', tt._id);
@@ -281,6 +290,9 @@ export default function SavedPage() {
     async function handleCopyLink() {
         if (!selectedTT) return;
         try {
+            if (!selectedTT.isPublic || !selectedTT.shareId) {
+                await axios.patch(`/api/timetables/${selectedTT._id}`, { isPublic: true });
+            }
             const { data } = await axios.get(`/api/timetables/${selectedTT._id}`);
             const url = `${window.location.origin}/share/${data.shareId}`;
             const copied = await copyToClipboard(url);
@@ -506,8 +518,13 @@ function TimetableCard({
     const labGrid: (string | null)[][] = Array.from({ length: 5 }, () => Array(13).fill(null));
     tt.slots.forEach(s => {
         s.slot.split('+').forEach(p => {
-            if (THEORY_SLOTS[p]) { const [r, c] = THEORY_SLOTS[p]; theoryGrid[r][c] = s.courseCode; }
-            if (LAB_SLOTS[p]) { const [r, c] = LAB_SLOTS[p]; labGrid[r][c] = s.courseCode; }
+            const slotCode = p.trim();
+            THEORY_SLOTS[slotCode]?.forEach(([r, c]) => {
+                theoryGrid[r][c] = s.courseCode;
+            });
+            LAB_SLOTS[slotCode]?.forEach(([r, c]) => {
+                labGrid[r][c] = s.courseCode;
+            });
         });
     });
     const gridRows: (string | null)[][] = [];
@@ -598,14 +615,13 @@ function TimetableDetailView({
 
     tt.slots.forEach(s => {
         s.slot.split('+').forEach(p => {
-            if (THEORY_SLOTS[p]) {
-                const [r, c] = THEORY_SLOTS[p];
-                theoryGrid[r][c] = { code: s.courseCode, courseName: s.courseName, facultyName: s.facultyName, slot: p };
-            }
-            if (LAB_SLOTS[p]) {
-                const [r, c] = LAB_SLOTS[p];
-                labGrid[r][c] = { code: s.courseCode, courseName: s.courseName, facultyName: s.facultyName, slot: p };
-            }
+            const slotCode = p.trim();
+            THEORY_SLOTS[slotCode]?.forEach(([r, c]) => {
+                theoryGrid[r][c] = { code: s.courseCode, courseName: s.courseName, facultyName: s.facultyName, slot: slotCode };
+            });
+            LAB_SLOTS[slotCode]?.forEach(([r, c]) => {
+                labGrid[r][c] = { code: s.courseCode, courseName: s.courseName, facultyName: s.facultyName, slot: slotCode };
+            });
         });
     });
 
@@ -815,11 +831,11 @@ function TimetableDetailView({
                 </div>
             </div>
 
-            <div className="pointer-events-none fixed left-[-10000px] top-[-10000px]" aria-hidden="true">
+            <div className="pointer-events-none fixed -left-2500 -top-2500" aria-hidden="true">
                 <div id="saved-selected-courses-export-sheet" style={{ width: 1200, background: '#F8E8D2', padding: 48 }}>
                     <div style={{ borderRadius: 36, border: '1px solid #d9d9d9', background: '#fff', paddingLeft: 40, paddingRight: 40, paddingTop: 32, paddingBottom: 40, boxShadow: '0 12px 40px rgba(0,0,0,0.04)' }}>
                         <h2 style={{ marginTop: 0, marginBottom: 56, textAlign: 'center', fontSize: 30, lineHeight: 1.2, fontWeight: 900, color: '#000' }}>{tt.title}</h2>
-                        <div style={{ overflow: 'hidden', borderTop: '1px solid #2c2c2c', borderBottom: '1px solid #2c2c2c', background: '#fff' }}>
+                        <div style={{ overflow: 'hidden', borderTop: '1px solid #2c2c2c', borderBottom: '1px solid #2c2c2c', background: '#fff', marginBottom: 32 }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
                                 <thead style={{ background: '#D9EBE5' }}>
                                     <tr>

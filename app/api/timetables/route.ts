@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/authOptions';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 // Prevent Next.js from caching this route
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,17 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const rateLimit = enforceRateLimit(req, {
+            key: 'timetables-list',
+            windowMs: 60_000,
+            maxRequests: 60,
+            identifier: `user:${session.user.email.trim().toLowerCase()}`,
+        });
+
+        if (rateLimit.limited) {
+            return rateLimit.response;
+        }
+
         const { searchParams } = new URL(req.url);
         const owner = searchParams.get('owner');
 
@@ -36,10 +48,10 @@ export async function GET(req: NextRequest) {
         const timetables = await Timetable.find({ owner })
             .sort({ createdAt: -1 })
             .lean();
-        return NextResponse.json(timetables, { headers: NO_STORE_HEADERS });
+        return NextResponse.json(timetables, { headers: { ...NO_STORE_HEADERS, ...rateLimit.headers } });
     } catch (err: any) {
         console.error('[timetables/list] Error:', err?.message || err);
-        return NextResponse.json({ error: 'Failed to fetch', detail: err?.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
     }
 }
 
