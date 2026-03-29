@@ -835,7 +835,7 @@ function TimetableDetailView({
                 <div id="saved-selected-courses-export-sheet" style={{ width: 1200, background: '#F8E8D2', padding: 48 }}>
                     <div style={{ borderRadius: 36, border: '1px solid #d9d9d9', background: '#fff', paddingLeft: 40, paddingRight: 40, paddingTop: 32, paddingBottom: 40, boxShadow: '0 12px 40px rgba(0,0,0,0.04)' }}>
                         <h2 style={{ marginTop: 0, marginBottom: 56, textAlign: 'center', fontSize: 30, lineHeight: 1.2, fontWeight: 900, color: '#000' }}>{tt.title}</h2>
-                        <div style={{ overflow: 'hidden', borderTop: '1px solid #2c2c2c', borderBottom: '1px solid #2c2c2c', background: '#fff' }}>
+                        <div style={{ overflow: 'hidden', borderTop: '1px solid #2c2c2c', borderBottom: '1px solid #2c2c2c', background: '#fff', marginBottom: 32 }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
                                 <thead style={{ background: '#D9EBE5' }}>
                                     <tr>

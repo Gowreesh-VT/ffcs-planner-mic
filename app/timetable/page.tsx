@@ -787,7 +787,7 @@ export default function TimetablePage() {
                 <div id="selected-courses-export" className="w-300 bg-[#F8E8D2] p-12 font-sans">
                     <div className="rounded-[36px] border border-[#d9d9d9] bg-white px-10 pt-8 pb-10 shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
                         <h2 className="mb-20 text-center text-[30px] leading-[1.2] font-black text-black">{timetableTitle || 'Selected Courses'}</h2>
-                        <div className="overflow-hidden border-y border-[#2c2c2c] bg-white">
+                        <div className="overflow-hidden border-y border-[#2c2c2c] bg-white" style={{ marginBottom: 32 }}>
                             <table className="w-full border-collapse text-center">
                                 <thead className="bg-[#D9EBE5]">
                                     <tr>
@@ -900,8 +900,8 @@ export default function TimetablePage() {
             {showDownloadModal && (
                 <div className="fixed inset-0 z-520 flex items-center justify-center bg-black/35 backdrop-blur-xs" onClick={() => setShowDownloadModal(false)}>
                     <div className="w-[92%] max-w-105 rounded-3xl bg-white p-7 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <h2 className="text-[24px] font-black text-black">Download PDF</h2>
-                        <p className="mt-2 text-[15px] font-medium text-gray-600">Choose what you want to download.</p>
+                        <h2 className="text-center text-[24px] font-black text-black">Download PDF</h2>
+                        <p className="mt-2 text-center text-[15px] font-medium text-gray-600">Choose what you want to download.</p>
                         <div className="mt-6 flex flex-col gap-3">
                             <button
                                 onClick={() => handleDownload('timetable')}
@@ -918,7 +918,7 @@ export default function TimetablePage() {
                         </div>
                         <button
                             onClick={() => setShowDownloadModal(false)}
-                            className="mt-5 w-full rounded-[14px] bg-[#f3f4f6] px-4 py-3 text-[15px] font-semibold text-gray-700 transition-colors hover:bg-[#e5e7eb]"
+                            className="mt-3! w-full rounded-[14px] bg-[#f3f4f6] px-4 py-3 text-[15px] font-semibold text-gray-700 transition-colors hover:bg-[#e5e7eb]"
                         >
                             Cancel
                         </button>
