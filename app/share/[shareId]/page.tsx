@@ -51,6 +51,7 @@ export default function SharePage() {
     const [timetable, setTimetable] = useState<SharedSlot[]>([]);
     const [title, setTitle] = useState("");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [selectedSlot, setSelectedSlot] = useState<SharedSlot | null>(null);
     const [highlightedCells, setHighlightedCells] = useState<HighlightedCell[]>([]);
     const [selectedSlotCategory, setSelectedSlotCategory] = useState<SlotCategory | null>(null);
@@ -65,7 +66,18 @@ export default function SharePage() {
                 if (res.data.success) {
                     setTitle(res.data.timetable.title);
                     setTimetable(res.data.timetable.slots);
+                    setError('');
+                    return;
                 }
+
+                setError('This shared timetable link is invalid or no longer available.');
+            })
+            .catch((requestError) => {
+                const message =
+                    axios.isAxiosError(requestError) && requestError.response?.status === 404
+                        ? 'This shared timetable link is invalid or no longer available.'
+                        : 'Failed to load the shared timetable.';
+                setError(message);
             })
             .finally(() => setLoading(false));
     }, [shareId]);
@@ -130,9 +142,20 @@ export default function SharePage() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#F5E6D3] font-sans flex items-center justify-center px-6">
+                <div className="w-full max-w-180 rounded-4xl bg-[#FFFBF0] p-10 text-center shadow-sm">
+                    <h1 className="text-[32px] font-bold text-black">Shared Timetable</h1>
+                    <p className="mt-4 text-[18px] text-gray-700">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#F5E6D3] font-sans flex flex-col items-center py-8">
-            <div className="w-[95%] max-w-[1400px] bg-[#FFFBF0] rounded-[32px] p-8 my-8 pb-4 shadow-sm">
+            <div className="w-[95%] max-w-350 bg-[#FFFBF0] rounded-4xl p-8 my-8 pb-4 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 ml-2">
                     <div className="flex items-center gap-4">
                         <h1 className="text-[26px] font-bold text-black">{title || 'Shared Timetable'}</h1>
@@ -145,23 +168,23 @@ export default function SharePage() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-[16px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-x-auto border border-white">
-                    <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-[16px]">
+                <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-x-auto border border-white">
+                    <table className="w-full border-collapse bg-white overflow-hidden text-center rounded-2xl">
                         <thead>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw] min-w-[70px]">Theory Hours</th>
+                            <tr className="border-b-2 border-white">
+                                <th className="p-2 text-center text-xs font-bold text-black border-r-2 border-white bg-white w-[5vw] min-w-17.5">Theory Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-2 border-white bg-white ${i === 6 ? 'w-7.5 px-0' : 'min-w-15'}`}>
                                         {t.theory ? t.theory.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
                                     </th>
                                 ))}
                             </tr>
-                            <tr className="border-b-[2px] border-white">
-                                <th className="p-2 text-center text-xs font-bold text-black border-r-[2px] border-white bg-white w-[5vw] min-w-[70px]">Lab Hours</th>
+                            <tr className="border-b-2 border-white">
+                                <th className="p-2 text-center text-xs font-bold text-black border-r-2 border-white bg-white w-[5vw] min-w-17.5">Lab Hours</th>
                                 {[...leftTimes, { theory: '', lab: '' }, ...rightTimes].map((t, i) => (
-                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-[2px] border-white bg-white ${i === 6 ? 'w-[30px] px-0' : 'min-w-[60px]'}`}>
+                                    <th key={i} className={`p-1 pt-2 pb-2 text-center text-[10px] leading-tight font-bold text-black border-r-2 border-white bg-white ${i === 6 ? 'w-7.5 px-0' : 'min-w-15'}`}>
                                         {t.lab ? t.lab.split('-').map((part, idx, arr) => (
                                             <span key={idx} className="block whitespace-nowrap">{part}{idx < arr.length - 1 ? '-' : ''}</span>
                                         )) : null}
@@ -171,13 +194,13 @@ export default function SharePage() {
                         </thead>
                         <tbody className="bg-white">
                             {scheduleRows.map((row, rowIdx) => (
-                                <tr key={row.day} className="group border-b-[2px] border-white">
-                                    <td className="p-0 text-[11px] font-bold text-black text-center align-middle w-[5vw] min-w-[70px] border-r-[2px] border-white bg-white">{row.day}</td>
+                                <tr key={row.day} className="group border-b-2 border-white">
+                                    <td className="p-0 text-[11px] font-bold text-black text-center align-middle w-[5vw] min-w-17.5 border-r-2 border-white bg-white">{row.day}</td>
                                     {Array.from({ length: 13 }).map((_, colIdx) => {
                                         if (colIdx === 6) {
                                             const lunchLetters = ['L', 'U', 'N', 'C', 'H'];
                                             return (
-                                                <td key="lunch-spacer" className="w-[30px] border-r-[2px] border-white align-middle bg-[#f8f9fa]">
+                                                <td key="lunch-spacer" className="w-7.5 border-r-2 border-white align-middle bg-[#f8f9fa]">
                                                     <div className="flex flex-col items-center justify-center h-full py-1">
                                                         <span className="text-[11px] font-black text-black opacity-80">
                                                             {lunchLetters[rowIdx]}
@@ -203,21 +226,21 @@ export default function SharePage() {
                                         }
 
                                         return (
-                                            <td key={colIdx} className="align-top border-r-[2px] border-white p-0 bg-white">
+                                            <td key={colIdx} className="align-top border-r-2 border-white p-0 bg-white">
                                                 <div className="flex flex-col h-full w-full">
                                                     {/* Theory Slot */}
                                                     <div
                                                         data-slot-label={theoryLabel}
                                                         data-slot-category="theory"
                                                         data-bgcolor={theoryBackgroundColor}
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[40px] py-[4px] transition-all cursor-pointer ${theoryCell ? 'z-10 hover:shadow-sm' : ''} ${isSameSharedSlot(selectedSlot, theoryCell) ? 'brightness-110' : ''}`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-10 py-1 transition-all cursor-pointer ${theoryCell ? 'z-10 hover:shadow-sm' : ''} ${isSameSharedSlot(selectedSlot, theoryCell) ? 'brightness-110' : ''}`}
                                                         style={{ backgroundColor: theoryBackgroundColor }}
                                                         onClick={() => theoryCell && openSelectedSlot(theoryCell, 'theory')}
                                                     >
                                                         {theoryCell ? (
                                                             <>
                                                                 <span className="text-[10px] font-bold text-black leading-tight">{theoryLabel}</span>
-                                                                <span className="text-[8px] font-bold text-black opacity-80 uppercase mt-[2px] truncate px-1 max-w-[65px] leading-tight">{theoryCell.courseCode}</span>
+                                                                <span className="text-[8px] font-bold text-black opacity-80 uppercase mt-0.5 truncate px-1 max-w-16.25 leading-tight">{theoryCell.courseCode}</span>
                                                             </>
                                                         ) : (
                                                             <span className="text-[10px] font-bold text-[#4ea075]">{theoryLabel}</span>
@@ -225,21 +248,21 @@ export default function SharePage() {
                                                     </div>
 
                                                     {/* Divider */}
-                                                    <div className="h-[2px] w-full bg-white flex-shrink-0" />
+                                                    <div className="h-0.5 w-full bg-white shrink-0" />
 
                                                     {/* Lab Slot */}
                                                     <div
                                                         data-slot-label={labLabel}
                                                         data-slot-category="lab"
                                                         data-bgcolor={labBackgroundColor}
-                                                        className={`flex-1 flex flex-col items-center justify-center min-h-[40px] py-[4px] transition-all cursor-pointer ${labCell ? 'z-10 hover:shadow-sm' : ''} ${isSameSharedSlot(selectedSlot, labCell) ? 'brightness-110' : ''}`}
+                                                        className={`flex-1 flex flex-col items-center justify-center min-h-10 py-1 transition-all cursor-pointer ${labCell ? 'z-10 hover:shadow-sm' : ''} ${isSameSharedSlot(selectedSlot, labCell) ? 'brightness-110' : ''}`}
                                                         style={{ backgroundColor: labBackgroundColor }}
                                                         onClick={() => labCell && openSelectedSlot(labCell, 'lab')}
                                                     >
                                                         {labCell ? (
                                                             <>
                                                                 <span className="text-[10px] font-bold text-black leading-tight">{labLabel}</span>
-                                                                <span className="text-[8px] font-bold text-black opacity-80 uppercase mt-[2px] truncate px-1 max-w-[65px] leading-tight">{labCell.courseCode}</span>
+                                                                <span className="text-[8px] font-bold text-black opacity-80 uppercase mt-0.5 truncate px-1 max-w-16.25 leading-tight">{labCell.courseCode}</span>
                                                             </>
                                                         ) : (
                                                             <span className="text-[10px] font-bold text-[#d4a044]">{labLabel}</span>
@@ -258,11 +281,11 @@ export default function SharePage() {
 
             {/* Popover */}
             {selectedSlot && (
-                <div className="slot-detail-backdrop fixed inset-0 z-[500] flex items-center justify-center px-4" onClick={clearSelectedSlot}>
+                <div className="slot-detail-backdrop fixed inset-0 z-500 flex items-center justify-center px-4" onClick={clearSelectedSlot}>
                     {highlightedCells.map((highlightedCell) => (
                         <div
                             key={`${highlightedCell.label}-${highlightedCell.rect.top}-${highlightedCell.rect.left}`}
-                            className="pointer-events-none fixed z-[505] flex flex-col items-center justify-center brightness-110 shadow-[0_12px_24px_rgba(0,0,0,0.14)]"
+                            className="pointer-events-none fixed z-505 flex flex-col items-center justify-center brightness-110 shadow-[0_12px_24px_rgba(0,0,0,0.14)]"
                             style={{
                                 top: highlightedCell.rect.top,
                                 left: highlightedCell.rect.left,
@@ -272,13 +295,13 @@ export default function SharePage() {
                             }}
                         >
                             <span className="text-[10px] font-bold leading-tight text-black">{highlightedCell.label}</span>
-                            <span className="max-w-[65px] truncate px-1 text-[8px] font-bold uppercase leading-tight text-black opacity-80">
+                            <span className="max-w-16.25 truncate px-1 text-[8px] font-bold uppercase leading-tight text-black opacity-80">
                                 {highlightedCell.courseCode}
                             </span>
                         </div>
                     ))}
                     <div
-                        className="relative z-[510] flex shrink-0 flex-col animate-[scaleIn_0.2s_ease] overflow-hidden rounded-[12px] border-[1.5px] px-5 pt-5 pb-4"
+                        className="relative z-510 flex shrink-0 flex-col animate-[scaleIn_0.2s_ease] overflow-hidden rounded-xl border-[1.5px] px-5 pt-5 pb-4"
                         style={{
                             width: '335px',
                             height: '312px',

@@ -31,6 +31,7 @@ import { useSession } from 'next-auth/react';
 import { usePreferences } from '@/lib/PreferencesContext';
 import { getCourseType } from '@/lib/course_codes_map';
 import { fullCourseData } from '@/lib/type';
+import { getPlannerStoredValue, setPlannerStoredValue } from '@/lib/plannerStorage';
 
 // Cookie utility functions
 const setCookie = (name: string, value: string, days = 30) => {
@@ -108,7 +109,7 @@ export default function PreferencesPage() {
         const savedDomains = getCookie('preferenceDomains');
         const savedSubjects = getCookie('preferenceSubjects');
         const savedSlots = getCookie('preferenceSlots');
-        const savedFaculties = getCookie('preferenceMultipleFaculties');
+        const savedFaculties = getPlannerStoredValue('preferenceMultipleFaculties');
         const savedPriority = getCookie('facultyPriority');
 
         if (savedStep) {
@@ -147,7 +148,7 @@ export default function PreferencesPage() {
     }, [currentStep, selectedDepartments, selectedDomains, selectedSubjects, selectedSlots, facultyPriority]);
 
     useEffect(() => {
-        setCookie('preferenceMultipleFaculties', JSON.stringify(savedFacultyPreferences));
+        setPlannerStoredValue('preferenceMultipleFaculties', JSON.stringify(savedFacultyPreferences));
     }, [savedFacultyPreferences]);
 
     useEffect(() => {
@@ -396,7 +397,7 @@ export default function PreferencesPage() {
                 let existingCourses: fullCourseData[] = [];
 
                 try {
-                    const existingCoursesRaw = getCookie('preferenceCourses');
+                    const existingCoursesRaw = getPlannerStoredValue('preferenceCourses');
                     existingCourses = existingCoursesRaw ? JSON.parse(existingCoursesRaw) : [];
                 } catch (error) {
                     console.error('Error reading preferenceCourses cookie:', error);
@@ -439,10 +440,10 @@ export default function PreferencesPage() {
                         updatedExistingCourses.push(course);
                     });
 
-                    setCookie('preferenceCourses', JSON.stringify(updatedExistingCourses));
+                    setPlannerStoredValue('preferenceCourses', JSON.stringify(updatedExistingCourses));
                 } catch (error) {
                     console.error('Error saving preferenceCourses cookie:', error);
-                    setCookie('preferenceCourses', JSON.stringify(newCourses));
+                    setPlannerStoredValue('preferenceCourses', JSON.stringify(newCourses));
                 }
 
                 setSavedFacultyPreferences(prev => {
@@ -503,9 +504,9 @@ export default function PreferencesPage() {
     return (
         <>
         <div className={`h-screen bg-[#F5E6D3] font-sans overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="h-full px-[clamp(12px,1.5vw,24px)] pt-[clamp(10px,1vh,18px)] pb-[116px]">
-                <div className="w-full max-w-[1800px] h-full mx-auto flex flex-col min-h-0">
-                    <div className="flex items-center gap-4 px-2 pt-[24px] pb-3 shrink-0">
+            <div className="h-full px-[clamp(12px,1.5vw,24px)] pt-[clamp(10px,1vh,18px)] pb-29">
+                <div className="w-full max-w-450 h-full mx-auto flex flex-col min-h-0">
+                    <div className="flex items-center gap-4 px-2 pt-6 pb-3 shrink-0">
                         <h1 className="text-[26px] lg:text-3xl font-bold text-black animate-lucid-fade-up">Select Your Preferences</h1>
                     </div>
 
@@ -516,17 +517,17 @@ export default function PreferencesPage() {
                             <div
                                 key={stepNum}
                                 onClick={stepNum === currentStep ? undefined : () => handleStepClick(stepNum)}
-                                className={`rounded-[16px] flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
+                                className={`rounded-2xl flex items-center justify-center transition-all duration-300 overflow-hidden shrink-0 ${
   stepNum === currentStep
-    ? 'flex-[2.8] min-w-[280px] max-w-[470px]'
-    : 'flex-1 min-w-[58px]'
+    ? 'flex-[2.8] min-w-70 max-w-117.5'
+    : 'flex-1 min-w-14.5'
 }`}
                                 style={{ backgroundColor: STEP_COLORS[stepNum - 1] }}
                             >
                             {stepNum === currentStep ? (
-                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-2 lg:px-4 pt-4 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-[16px] animate-lucid-panel-in">
+                                <div key={`active-step-${currentStep}`} className="w-full h-full flex flex-col px-2 lg:px-4 pt-4 pb-3 overflow-hidden bg-white/10 backdrop-blur-sm rounded-2xl animate-lucid-panel-in">
                                     <div 
-                                        className="flex items-center justify-center shrink-0 border-b-[4px] pb-3 mb-3 px-2 lg:mx-[-16px] lg:px-4"
+                                        className="flex items-center justify-center shrink-0 border-b-4 pb-3 mb-3 px-2 lg:-mx-4 lg:px-4"
                                         style={{ borderBottomColor: STEP_BORDER_COLORS[stepNum - 1] }}
                                     >
                                         <h2 className="text-[16px] lg:text-[28px] font-bold text-black m-0 leading-none text-center">
@@ -783,21 +784,21 @@ export default function PreferencesPage() {
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
             <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
                 {/* LEFT - USER BOX */}
-                <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                <div className="bg-white rounded-xl p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                     {session?.user?.image ? (
-                        <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
+                        <img src={session.user.image} alt="User avatar" className="w-9 h-9 rounded-lg border border-gray-100 shrink-0" referrerPolicy="no-referrer" />
                     ) : (
-                        <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                        <div className="w-9 h-9 bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0">
                             {session?.user?.name?.[0] || "?"}
                         </div>
                     )}
-                    <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                    <span className="text-gray-800 text-sm font-bold truncate max-w-50 pr-2">
                         {session?.user?.name || "Guest"}
                     </span>
                 </div>
 
                 {/* CENTER - STEPS BOX */}
-                <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
+                <div className="bg-white rounded-xl p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-0 mt-2 md:mt-0">
                     {[1, 2, 3, 4].map((num) => (
                         <button
                             key={num}
@@ -807,10 +808,10 @@ export default function PreferencesPage() {
                                 if (num === 3) router.push('/timetable');
                                 if (num === 4) router.push('/saved');
                             }}
-                            className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${
+                            className={`h-9.5 flex items-center justify-center rounded-md font-bold text-sm cursor-pointer transition-colors border-none ${
                                 num === 1
-                                    ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
-                                    : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                                    ? 'bg-[#A0C4FF] text-black px-4 min-w-9.5'
+                                    : 'bg-[#A0C4FF]/40 text-black min-w-9.5'
                             }`}
                         >
                             {num === 1 ? '1. Preferences' : num}
@@ -819,7 +820,7 @@ export default function PreferencesPage() {
                 </div>
 
                 {/* RIGHT - ACTION BOX */}
-                <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
+                <div className="flex gap-3 justify-end shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                     <button
                         onClick={() => {
                             deleteCookie('editingTimetableId');

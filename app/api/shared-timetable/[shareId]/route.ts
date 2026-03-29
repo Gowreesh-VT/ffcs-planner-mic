@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Timetable from '@/models/timetable';
+import { enforceRateLimit } from '@/lib/rateLimit';
 
 // Prevent Next.js from caching this route
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+    const rateLimit = enforceRateLimit(req, {
+        key: 'shared-timetable',
+        windowMs: 60_000,
+        maxRequests: 30,
+    });
+
+    if (rateLimit.limited) {
+        return rateLimit.response;
+    }
+
     await dbConnect();
 
     const shareId = req.nextUrl.pathname.split('/').pop();
@@ -17,7 +28,7 @@ export async function GET(req: NextRequest) {
     try {
         const timetable = await Timetable.findOne({ shareId });
 
-        if (!timetable) {
+        if (!timetable || !timetable.isPublic) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
 
@@ -34,10 +45,9 @@ export async function GET(req: NextRequest) {
             timetable: {
                 title: timetable.title,
                 slots: timetable.slots,
-                owner: timetable.owner,
                 shareId: timetable.shareId,
             },
-        }, { headers: NO_STORE_HEADERS });
+        }, { headers: { ...NO_STORE_HEADERS, ...rateLimit.headers } });
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }

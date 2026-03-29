@@ -8,6 +8,7 @@ import { getCourseType } from '@/lib/course_codes_map';
 import { clashMap } from '@/lib/slots';
 import { generateTT } from '@/lib/utils';
 import { useTimetable } from '@/lib/TimeTableContext';
+import { getPlannerStoredValue, setPlannerStoredValue } from '@/lib/plannerStorage';
 
 type FacultyEntry = {
     uid: string;
@@ -176,8 +177,8 @@ export default function CoursesPage() {
 
     useEffect(() => {
         try {
-            const savedPreferenceCourses = getCookie('preferenceCourses');
-            const savedFaculties = getCookie('preferenceMultipleFaculties');
+            const savedPreferenceCourses = getPlannerStoredValue('preferenceCourses');
+            const savedFaculties = getPlannerStoredValue('preferenceMultipleFaculties');
             const savedSubject = getCookie('preferenceSubject');
             const savedSlot = getCookie('preferenceSlot');
             const savedAllSubjectsMode = getCookie('allSubjectsMode');
@@ -235,10 +236,10 @@ export default function CoursesPage() {
     useEffect(() => {
         if (!loaded) return;
         const facultyNames = faculties.map((faculty) => faculty.facultyName);
-        setCookie('preferenceMultipleFaculties', JSON.stringify(facultyNames));
+        setPlannerStoredValue('preferenceMultipleFaculties', JSON.stringify(facultyNames));
 
         const updatedCourses = buildPreferenceCoursesFromRows(faculties);
-        setCookie('preferenceCourses', JSON.stringify(updatedCourses));
+        setPlannerStoredValue('preferenceCourses', JSON.stringify(updatedCourses));
     }, [faculties, loaded]);
 
     useEffect(() => {
@@ -363,7 +364,7 @@ export default function CoursesPage() {
     const syncAndOpenTimetable = () => {
         const rowsForGeneration = allSubjectsMode ? faculties : visibleFaculties;
         const updatedCourses = buildPreferenceCoursesFromRows(rowsForGeneration);
-        setCookie('generatedTimetableCourses', JSON.stringify(updatedCourses));
+        setPlannerStoredValue('generatedTimetableCourses', JSON.stringify(updatedCourses));
 
         const { result } = generateTT(updatedCourses);
         setTimetableData(result);
@@ -380,12 +381,12 @@ export default function CoursesPage() {
 
     return (
         <div className={`h-screen bg-[#F5E6D3] font-sans flex flex-col overflow-hidden transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-            <div className="flex-1 min-h-0 w-full flex justify-center px-4 sm:px-6 pt-6 pb-[116px]">
+            <div className="flex-1 min-h-0 w-full flex justify-center px-4 sm:px-6 pt-6 pb-29">
                 <div className="w-full max-w-6xl min-h-0 flex flex-col gap-4">
                     <h1 className="text-3xl sm:text-4xl font-bold text-black px-2 pt-2 shrink-0">Your Courses</h1>
 
                     {/* Selected Courses Card */}
-                    <div className="w-full flex-1 min-h-0 bg-[#fcfcfc] rounded-[24px] shadow-sm border border-[#eaeaea] overflow-hidden animate-lucid-fade-up-delayed flex flex-col">
+                    <div className="w-full flex-1 min-h-0 bg-[#fcfcfc] rounded-3xl shadow-sm border border-[#eaeaea] overflow-hidden animate-lucid-fade-up-delayed flex flex-col">
                         <div className="bg-[#a9d6a9] px-6 py-4 shrink-0">
                             <h2 className="text-2xl font-bold text-[#1f1f1f]">Selected Courses</h2>
                         </div>
@@ -528,7 +529,7 @@ export default function CoursesPage() {
                                             onChange={(e) => setAllSubjectsMode(e.target.checked)}
                                         />
                                         <div className="w-12 h-7 bg-white border border-[#d8d1a3] rounded-full peer-checked:bg-[#e6c44c] transition-colors duration-200"></div>
-                                        <div className="absolute left-[4px] top-[4px] w-5 h-5 bg-[#d8d1a3] rounded-full transition-all duration-200 peer-checked:translate-x-[20px] peer-checked:bg-white" />
+                                        <div className="absolute left-1 top-1 w-5 h-5 bg-[#d8d1a3] rounded-full transition-all duration-200 peer-checked:translate-x-5 peer-checked:bg-white" />
                                     </label>
                                 </div>
                             </div><button
@@ -551,21 +552,21 @@ export default function CoursesPage() {
             <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
                 <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
                     {/* LEFT - USER BOX */}
-                    <div className="bg-white rounded-[12px] p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                    <div className="bg-white rounded-xl p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
                         {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-[36px] h-[36px] rounded-lg border border-gray-100 flex-shrink-0" referrerPolicy="no-referrer" />
+                            <img src={session.user.image} alt="User avatar" className="w-9.5 h-9.5 rounded-lg border border-gray-100 shrink-0" referrerPolicy="no-referrer" />
                         ) : (
-                            <div className="w-[36px] h-[36px] bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
+                            <div className="w-9 h-9 bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0">
                                 {session?.user?.name?.[0] || "?"}
                             </div>
                         )}
-                        <span className="text-gray-800 text-sm font-bold truncate max-w-[200px] pr-2">
+                        <span className="text-gray-800 text-sm font-bold truncate max-w-50 pr-2">
                             {session?.user?.name || "Guest"}
                         </span>
                     </div>
 
                     {/* CENTER - STEPS BOX */}
-                    <div className="bg-white rounded-[12px] p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-none mt-2 md:mt-0">
+                    <div className="bg-white rounded-xl p-2 shadow-sm flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto order-last md:order-0 mt-2 md:mt-0">
                         {[1, 2, 3, 4].map((num) => (
                             <button
                                 key={num}
@@ -575,9 +576,9 @@ export default function CoursesPage() {
                                     if (num === 3) syncAndOpenTimetable();
                                     if (num === 4) router.push('/saved');
                                 }}
-                                className={`h-[38px] flex items-center justify-center rounded-[6px] font-bold text-sm cursor-pointer transition-colors border-none ${num === 2
-                                        ? 'bg-[#A0C4FF] text-black px-4 min-w-[38px]'
-                                        : 'bg-[#A0C4FF]/40 text-black min-w-[38px]'
+                                className={`h-9.5 flex items-center justify-center rounded-md font-bold text-sm cursor-pointer transition-colors border-none ${num === 2
+                                        ? 'bg-[#A0C4FF] text-black px-4 min-w-9.5'
+                                        : 'bg-[#A0C4FF]/40 text-black min-w-9.5'
                                     }`}
                             >
                                 {num === 2 ? '2. Courses' : num}
@@ -586,7 +587,7 @@ export default function CoursesPage() {
                     </div>
 
                     {/* RIGHT - ACTION BOX */}
-                    <div className="flex gap-3 justify-end flex-shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
+                    <div className="flex gap-3 justify-end shrink-0 ml-auto mr-auto sm:mr-0 mt-2 sm:mt-0">
                         <button
                             onClick={() => {
                                 const editingTimetableId = getCookie('editingTimetableId');
@@ -614,8 +615,8 @@ export default function CoursesPage() {
             {isHelpOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/35" onClick={() => setIsHelpOpen(false)}></div>
-                    <div className="relative w-[92%] max-w-[448px] bg-[#f4edcf] rounded-[4px] shadow-[0_16px_34px_rgba(0,0,0,0.20)] overflow-hidden">
-                        <div className="px-8 py-2 bg-[#f1e7b8] border-b-[4px] border-[#7c6f1f]">
+                    <div className="relative w-[92%] max-w-md bg-[#f4edcf] rounded-sm shadow-[0_16px_34px_rgba(0,0,0,0.20)] overflow-hidden">
+                        <div className="px-8 py-2 bg-[#f1e7b8] border-b-4 border-[#7c6f1f]">
                             <div className="text-[17px] leading-none font-bold text-black">Alert</div>
                         </div>
                         <div className="px-8 py-7 text-left text-[#1f1f1f]">
@@ -634,7 +635,7 @@ export default function CoursesPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsHelpOpen(false)}
-                                    className="inline-flex min-w-[86px] items-center justify-center px-7 py-2 bg-[#f0df93] rounded-[5px] text-[14px] leading-none font-semibold text-[#1f1f1f] hover:brightness-95 transition"
+                                    className="inline-flex min-w-21.5 items-center justify-center px-7 py-2 bg-[#f0df93] rounded-[5px] text-[14px] leading-none font-semibold text-[#1f1f1f] hover:brightness-95 transition"
                                 >
                                     OK
                                 </button>
