@@ -2,7 +2,9 @@ import { MongoClient } from 'mongodb';
 
 const options = {};
 
-let client: MongoClient | undefined;
+declare global {
+    var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
 
 // Export a function that returns a Promise<MongoClient> so the connection
 // is created lazily at runtime instead of during module evaluation. This
@@ -21,17 +23,10 @@ export default function getClientPromise(): Promise<MongoClient> {
         throw new Error(`Invalid MONGODB_URI: Must start with "mongodb://" or "mongodb+srv://". Did you paste the wrong string in Vercel?`);
     }
 
-    if (process.env.NODE_ENV === 'development') {
-        // @ts-expect-error: Attach to global for reuse in dev
-        if (!global._mongoClientPromise) {
-            client = new MongoClient(uri, options);
-            // @ts-expect-error: _mongoClientPromise is a custom property on global
-            global._mongoClientPromise = client.connect();
-        }
-        // @ts-expect-error: _mongoClientPromise is a custom property on global
-        return global._mongoClientPromise as Promise<MongoClient>;
+    if (!global._mongoClientPromise) {
+        const client = new MongoClient(uri, options);
+        global._mongoClientPromise = client.connect();
     }
 
-    client = new MongoClient(uri, options);
-    return client.connect();
+    return global._mongoClientPromise;
 }
