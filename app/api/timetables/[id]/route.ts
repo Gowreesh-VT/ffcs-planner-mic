@@ -7,6 +7,7 @@ import { generateShareId } from '@/lib/shareIDgenerate';
 import mongoose from 'mongoose';
 import { validateTimetableUpdateBody } from '@/lib/timetableValidation';
 import { enforceRateLimit } from '@/lib/rateLimit';
+import { resolveUniqueTimetableTitle } from '@/lib/timetableTitle';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,31 +101,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Prevent duplicate timetable names for the same user upon rename
+        // Auto-resolve duplicate timetable names on rename by appending a numeric suffix.
         if (update.title !== undefined) {
-            const existingTimetable = await Timetable.findOne({ owner: session.user.email, title: update.title, _id: { $ne: id } });
-            if (existingTimetable) {
-                return NextResponse.json({ error: 'A timetable with this title already exists' }, { status: 409 });
-            }
+            update.title = await resolveUniqueTimetableTitle({
+                owner: session.user.email,
+                requestedTitle: String(update.title),
+                excludeId: id,
+            });
         }
 
         const shouldGenerateShareId = update.isPublic === true && !timetable.shareId;
 
         if (!shouldGenerateShareId) {
-            await Timetable.findByIdAndUpdate(id, update, {
+            const updatedTimetable = await Timetable.findByIdAndUpdate(id, update, {
                 returnDocument: 'after',
                 runValidators: true,
             });
+            return NextResponse.json({ success: true, timetable: updatedTimetable }, { headers: rateLimit.headers });
         } else {
             let attempts = 0;
             let updated = false;
+            let updatedTimetable = null;
 
             while (attempts < MAX_SHARE_ID_GENERATION_ATTEMPTS && !updated) {
                 attempts += 1;
                 const candidateShareId = generateShareId();
 
                 try {
-                    await Timetable.findByIdAndUpdate(
+                    updatedTimetable = await Timetable.findByIdAndUpdate(
                         id,
                         {
                             ...update,
@@ -148,9 +152,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             if (!updated) {
                 return NextResponse.json({ error: 'Failed to generate a unique share link. Please try again.' }, { status: 503 });
             }
-        }
 
-        return NextResponse.json({ success: true }, { headers: rateLimit.headers });
+            return NextResponse.json({ success: true, timetable: updatedTimetable }, { headers: rateLimit.headers });
+        }
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to update';
         const maybeMongoError = err as { code?: number; keyPattern?: Record<string, number> };
