@@ -19,6 +19,7 @@ const timetableSchema = new Schema(
 );
 
 timetableSchema.index({ owner: 1 });
+timetableSchema.index({ owner: 1, title: 1 }, { unique: true });
 
 export type ITimetable = InferSchemaType<typeof timetableSchema>;
 

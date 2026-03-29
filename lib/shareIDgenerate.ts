@@ -1,8 +1,13 @@
-export function generateShareId(length = 6) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+import { randomBytes } from 'crypto';
+
+export function generateShareId(length = 24) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = randomBytes(length);
     let result = '';
+
     for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+        result += chars[bytes[i] % chars.length];
     }
+
     return result;
 }

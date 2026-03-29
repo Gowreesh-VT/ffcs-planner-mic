@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx tsx scripts/seed-courses.ts"
+    "seed": "npx tsx scripts/seed-courses.ts",
+    "load:public": "node scripts/load/run-load-test.mjs --group public",
+    "load:shared": "node scripts/load/run-load-test.mjs --group shared",
+    "load:auth": "node scripts/load/run-load-test.mjs --group auth",
+    "load:all": "node scripts/load/run-load-test.mjs --group all"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
