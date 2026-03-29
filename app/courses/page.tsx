@@ -549,20 +549,49 @@ export default function CoursesPage() {
 
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center">
-                <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full max-w-7xl">
-                    {/* LEFT - USER BOX */}
-                    <div className="bg-white rounded-xl p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
-                        {session?.user?.image ? (
-                            <img src={session.user.image} alt="User avatar" className="w-9.5 h-9.5 rounded-lg border border-gray-100 shrink-0" referrerPolicy="no-referrer" />
-                        ) : (
-                            <div className="w-9 h-9 bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0">
-                                {session?.user?.name?.[0] || "?"}
-                            </div>
-                        )}
-                        <span className="text-gray-800 text-sm font-bold truncate max-w-50 pr-2">
-                            {session?.user?.name || "Guest"}
-                        </span>
+            <div
+                className="fixed bottom-0 left-0 right-0 z-40 bg-[#F5E6D3] py-6 px-[clamp(16px,2vw,32px)] w-full flex justify-center"
+                style={{ fontFamily: 'Inter, Arial, Helvetica, sans-serif' }}
+            >
+                <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 w-full">
+                    <div className="flex items-center justify-start gap-3 w-full sm:w-auto shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => router.push('/')}
+                            aria-label="Go to home page"
+                            title="Home"
+                            className="bg-white rounded-xl p-3 shadow-sm flex items-center justify-center min-w-14.5 min-h-14.5 hover:bg-gray-50 transition-colors shrink-0"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="w-6 h-6 text-gray-800"
+                                aria-hidden="true"
+                            >
+                                <path d="M3 10.5L12 3l9 7.5" />
+                                <path d="M5 9.5V21h14V9.5" />
+                                <path d="M9 21v-6h6v6" />
+                            </svg>
+                        </button>
+
+                        {/* LEFT - USER BOX */}
+                        <div className="bg-white rounded-xl p-3 shadow-sm flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                            {session?.user?.image ? (
+                                <img src={session.user.image} alt="User avatar" className="w-9.5 h-9.5 rounded-lg border border-gray-100 shrink-0" referrerPolicy="no-referrer" />
+                            ) : (
+                                <div className="w-9 h-9 bg-gray-300 rounded-lg flex items-center justify-center font-bold text-white text-sm shrink-0">
+                                    {session?.user?.name?.[0] || "?"}
+                                </div>
+                            )}
+                            <span className="text-gray-800 text-sm font-bold truncate max-w-50 pr-2">
+                                {session?.user?.name || "Guest"}
+                            </span>
+                        </div>
                     </div>
 
                     {/* CENTER - STEPS BOX */}

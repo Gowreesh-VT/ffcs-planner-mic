@@ -23,9 +23,6 @@ type FloatingTile = {
   depth: number;
   depthPhase: number;
   wobblePhase: number;
-  vibrationPhase: number;
-  jitterX: number;
-  jitterY: number;
 };
 
 const FLOATING_TILE_SIZE = 44;
@@ -115,10 +112,7 @@ export default function LandingPage() {
         rotPhase: idx * 0.7,
         depth: 0,
         depthPhase: idx * 0.8,
-        wobblePhase: idx * 1.2,
-        vibrationPhase: idx * 1.7,
-        jitterX: 0,
-        jitterY: 0
+        wobblePhase: idx * 1.2
       }));
     };
 
@@ -178,15 +172,8 @@ export default function LandingPage() {
           }
 
           const angleSwing = Math.sin(now * tile.rotSpeed + tile.rotPhase) * tile.rotAmplitude;
-          const buzzRotate = Math.sin(now * 0.032 + tile.vibrationPhase * 1.7) * 1.6;
-          const angle = tile.baseAngle + angleSwing + buzzRotate;
+          const angle = tile.baseAngle + angleSwing;
           const depth = Math.sin(now * 0.0005 + tile.depthPhase);
-          const jitterX =
-            Math.sin(now * 0.022 + tile.vibrationPhase) * 0.7 +
-            Math.sin(now * 0.049 + tile.vibrationPhase * 1.9) * 0.42;
-          const jitterY =
-            Math.cos(now * 0.02 + tile.vibrationPhase * 1.2) * 0.56 +
-            Math.cos(now * 0.053 + tile.vibrationPhase * 2.1) * 0.35;
 
           return {
             ...tile,
@@ -195,9 +182,7 @@ export default function LandingPage() {
             vx,
             vy,
             angle,
-            depth,
-            jitterX,
-            jitterY
+            depth
           };
         });
 
@@ -454,28 +439,36 @@ export default function LandingPage() {
                 a: "Yes, you can edit your saved timetables anytime. Make adjustments to your course selections and slot preferences before the FFCS registration deadline."
               }
             ].map((faq, index) => (
+              (() => {
+                const isOpen = activeFaq === index;
+                return (
               <div
                 key={index}
                 className="faq-item"
-                style={activeFaq === index ? { background: 'transparent', transition: 'background 0.3s ease' } : { cursor: 'pointer', transition: 'background 0.3s ease' }}
+                style={isOpen ? { background: 'transparent', transition: 'background 0.25s ease' } : { cursor: 'pointer', transition: 'background 0.25s ease' }}
               >
-                <div className="faq-question" onClick={() => setActiveFaq(activeFaq === index ? null : index)}>
+                <div className="faq-question" onClick={() => setActiveFaq(isOpen ? null : index)}>
                   <span>{faq.q.split('\n').map((line, i) => <React.Fragment key={i}>{line}{i === 0 && faq.q.includes('\n') ? <br /> : null}</React.Fragment>)}</span>
-                  <span className="faq-icon" style={{ transform: activeFaq === index ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.4s ease' }}>⌄</span>
+                  <span className="faq-icon" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>⌄</span>
                 </div>
                 <div
                   style={{
-                    maxHeight: activeFaq === index ? '200px' : '0px',
-                    opacity: activeFaq === index ? 1 : 0,
-                    overflow: 'hidden',
-                    transition: 'all 0.4s ease-in-out'
+                    display: 'grid',
+                    gridTemplateRows: isOpen ? '1fr' : '0fr',
+                    opacity: isOpen ? 1 : 0,
+                    transition: 'grid-template-rows 0.35s ease, opacity 0.2s ease',
+                    overflow: 'hidden'
                   }}
                 >
-                  <div className="faq-answer">
-                    {faq.a}
+                  <div style={{ overflow: 'hidden' }}>
+                    <div className="faq-answer">
+                      {faq.a}
+                    </div>
                   </div>
                 </div>
               </div>
+                );
+              })()
             ))}
           </div>
         </div>
@@ -542,7 +535,7 @@ export default function LandingPage() {
                     className="floating-tile"
                     style={{
                       background: tile.color,
-                      transform: `translate3d(${tile.x + tile.jitterX}px, ${tile.y + tile.jitterY}px, ${zDepth}px) rotate(${tile.angle}deg) scale(${scale})`,
+                      transform: `translate3d(${tile.x}px, ${tile.y}px, ${zDepth}px) rotate(${tile.angle}deg) scale(${scale})`,
                       zIndex: Math.round((tile.depth + 1) * 10)
                     }}
                   >

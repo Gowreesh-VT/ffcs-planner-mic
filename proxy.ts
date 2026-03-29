@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROTECTED_PATH_PREFIXES = ['/saved', '/timetable', '/preferences', '/courses', '/team'];
+const PROTECTED_PATH_PREFIXES = ['/saved'];
 const SESSION_COOKIE_NAMES = ['next-auth.session-token', '__Secure-next-auth.session-token'];
 
 const isProtectedPath = (pathname: string) =>
@@ -25,5 +25,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/saved/:path*', '/timetable/:path*', '/preferences/:path*', '/courses/:path*', '/team/:path*'],
+    matcher: ['/saved/:path*'],
 };
