@@ -314,21 +314,21 @@ export default function LandingPage() {
               <button className="btn-primary" onClick={() => setOpen(true)}>Get Started</button>
               {open && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-                  <div className="flex items-center justify-center w-full max-w-[949px] bg-[#FFFCEE] rounded-[20px] shadow-xl p-6 mx-4 relative">
+                  <div className="flex items-center justify-center w-full max-w-237.25 bg-[#FFFCEE] rounded-[20px] shadow-xl p-6 mx-4 relative">
                     <div className="relative bg-[#FAFAFA] w-full flex flex-col items-center rounded-[20px] p-8 shadow-[4px_4px_4px_rgba(191,191,191,0.25)]">
                       <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-black text-[28px] z-10">✕</button>
                       <h2 className="text-[clamp(22px,3vw,32px)] font-semibold text-center mb-2 mt-2">
                         Welcome {session?.user?.name ? `back, ${session.user.name}` : "to FFCS"}!
                       </h2>
-                      <div className="w-full max-w-[700px] h-[1px] bg-gray-300 mb-4"></div>
+                      <div className="w-full max-w-175 h-px bg-gray-300 mb-4"></div>
                       <p className="text-center text-[clamp(16px,2vw,20px)] mb-8">Choose what you&apos;d like to do next</p>
                       <div className="flex flex-wrap gap-8 justify-center mb-4">
-                        <button className="flex flex-col items-center justify-center bg-[#E9F3E8] border-[5px] border-[#D4F4E6] rounded-[16px] p-6 w-[280px] max-w-full h-[200px] shadow hover:bg-green-200 transition text-black" onClick={() => { clearPlannerClientCache({ includeEditingState: true }); setOpen(false); router.push('/preferences'); }}>
+                        <button className="flex flex-col items-center justify-center bg-[#E9F3E8] border-[5px] border-[#D4F4E6] rounded-2xl p-6 w-70 max-w-full h-50 shadow hover:bg-green-200 transition text-black" onClick={() => { setOpen(false); router.push('/preferences'); }}>
                           <Image src="/create_new.png" alt="create" width={167} height={101} />
                           <p className="font-medium text-center">Create a new one</p>
                         </button>
                         <button
-                          className="flex flex-col items-center justify-center bg-[#E9D5FF] border-[#F2D8FE] border-[5px] rounded-[16px] p-6 w-[280px] max-w-full h-[200px] shadow hover:bg-purple-300 transition text-black"
+                          className="flex flex-col items-center justify-center bg-[#E9D5FF] border-[#F2D8FE] border-[5px] rounded-2xl p-6 w-70 max-w-full h-50 shadow hover:bg-purple-300 transition text-black"
                           onClick={() => {
                             if (!session) {
                               setOpen(false);
@@ -552,7 +552,7 @@ export default function LandingPage() {
             <div className="f-block f-updates" style={{ padding: '8px' }}>
               <button
                 onClick={() => router.push('/feedback')}
-                className="w-full flex items-center justify-center gap-2 bg-[#BFDBFE] hover:bg-[#93C5FD] transition-colors rounded-[8px] cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 bg-[#BFDBFE] hover:bg-[#93C5FD] transition-colors rounded-lg cursor-pointer"
                 style={{ height: '40px', width: '100%', border: 'none', fontWeight: 700, fontSize: '15px', color: '#000' }}
               >
                 Give feedback

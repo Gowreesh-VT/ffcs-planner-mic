@@ -412,9 +412,24 @@ export default function TeamPage() {
                 <Image src="/slot_icon.png" alt="slot" width={32} height={32} />
                 <span>View slots</span>
               </button>
-              <button className="f-btn f-btn-team" onClick={() => router.push('/team')}>
-                <Image src="/team_icon.png" alt="team" width={32} height={32} />
-                <span>View team</span>
+              <button className="f-btn f-btn-team" onClick={() => router.push('/')}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  width="32"
+                  height="32"
+                  aria-hidden="true"
+                >
+                  <path d="M3 10.5L12 3l9 7.5" />
+                  <path d="M5 9.5V21h14V9.5" />
+                  <path d="M9 21v-6h6v6" />
+                </svg>
+                <span>Go home</span>
               </button>
             </div>
 
